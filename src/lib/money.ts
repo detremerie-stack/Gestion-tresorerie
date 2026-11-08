@@ -40,6 +40,16 @@ export function isFixedRate(currency: Currency): boolean {
   return currency === 'XPF' || currency === 'EUR'
 }
 
+/**
+ * Frais de change effectifs (%) d'un paiement en `payCurrency` débité sur un compte en `accountCurrency`.
+ * Aucun frais si même devise, ni entre XPF et EUR (parité fixe : ni la BT ni AmEx ne prennent de commission).
+ */
+export function effectiveFee(payCurrency: Currency, accountCurrency: Currency | undefined, feePct: number | undefined): number {
+  if (!feePct || !accountCurrency || payCurrency === accountCurrency) return 0
+  if (isFixedRate(payCurrency) && isFixedRate(accountCurrency)) return 0
+  return feePct
+}
+
 export function toXPF(amount: number, currency: Currency, rates: Rates): number {
   return Math.round(amount * rateOf(currency, rates))
 }

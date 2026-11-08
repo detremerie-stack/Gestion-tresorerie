@@ -7,9 +7,9 @@ import type { ImportMapping, Transaction } from '../data/types'
 import { decodeText, detectDelimiter, parseCSV } from '../lib/import/csv'
 import { applyMapping, guessMapping, importHashes, type ParsedRow } from '../lib/import/mapping'
 import { looksLikeOFX, parseOFX } from '../lib/import/ofx'
-import { cleanLabel, matchRule } from '../lib/rules'
+import { cleanLabel, foreignAmount, matchRule } from '../lib/rules'
 import { formatDate } from '../lib/dates'
-import { formatMoney } from '../lib/money'
+import { CURRENCIES, formatMoney, fromXPF, toXPF, type Currency } from '../lib/money'
 import { uid } from '../lib/id'
 import { Page, Section } from '../ui/Page'
 import { SelectField } from '../ui/Field'
@@ -32,6 +32,7 @@ export default function Import() {
   const upsert = useStore((s) => s.upsert)
   const upsertMany = useStore((s) => s.upsertMany)
   const member = useStore((s) => s.settings.currentMember)
+  const rates = useStore((s) => s.settings.rates)
   const toast = useToast((s) => s.show)
 
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
@@ -87,9 +88,27 @@ export default function Import() {
   const toImport = preview.filter((p) => !(skipDup && p.dup))
   const cats = useMap('categories')
 
+  // Paiement d'une carte ou rechargement d'un autre compte du foyer = virement interne, pas une dépense.
+  const internalTarget = (label: string) => {
+    const l = label.toLowerCase()
+    const inst = /american express|amex/.test(l) ? 'amex' : /deblock/.test(l) ? 'deblock' : undefined
+    return inst ? accounts.find((a) => a.institution === inst && a.id !== accountId) : undefined
+  }
+
   const doImport = () => {
     if (!account) return
-    const txs: Transaction[] = toImport.map(({ r, hash, rule }) => ({
+    const txs: Transaction[] = toImport.map(({ r, hash, rule }) => {
+      const target = r.amount < 0 ? internalTarget(r.label) : undefined
+      const fx = foreignAmount(r.label)
+      const fxOk = fx && fx.currency !== account.currency && CURRENCIES.some((c) => c.code === fx.currency)
+      if (target) {
+        return {
+          id: uid(), updatedAt: '', date: r.date, type: 'transfer' as const, amount: Math.abs(r.amount), accountId, toAccountId: target.id,
+          toAmount: fromXPF(toXPF(Math.abs(r.amount), account.currency, rates), target.currency, rates),
+          rawLabel: r.label, tags: [], member: account.owner ?? member, importHash: hash,
+        }
+      }
+      return {
       id: uid(),
       updatedAt: '',
       date: r.date,
@@ -102,7 +121,9 @@ export default function Import() {
       tags: rule?.tags ?? [],
       member: account.owner ?? member,
       importHash: hash,
-    }))
+      ...(fxOk ? { originalAmount: fx!.amount, originalCurrency: fx!.currency as Currency } : {}),
+    }
+    })
     upsertMany('transactions', txs)
     if (mapping) upsert('accounts', { ...account, importMapping: mapping })
     toast(`${txs.length} opération${txs.length > 1 ? 's' : ''} importée${txs.length > 1 ? 's' : ''}`)
@@ -172,7 +193,7 @@ export default function Import() {
                     <td className="num">{formatDate(p.r.date).slice(0, 5)}</td>
                     <td>
                       {p.r.label}{p.dup && <span className="badge" style={{ marginLeft: 6 }}>déjà importée</span>}
-                      <div className="faint">{p.rule ? cats.get(p.rule.categoryId ?? '')?.name : 'Sans catégorie'}</div>
+                      <div className="faint">{p.r.amount < 0 && internalTarget(p.r.label) ? `Virement → ${internalTarget(p.r.label)!.name}` : p.rule ? cats.get(p.rule.categoryId ?? '')?.name : 'Sans catégorie'}</div>
                     </td>
                     <td className={`r num ${p.r.amount < 0 ? 'expense' : 'income'}`}>{formatMoney(p.r.amount, account?.currency ?? 'XPF', { sign: true })}</td>
                   </tr>

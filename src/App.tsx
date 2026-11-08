@@ -99,7 +99,9 @@ export default function App() {
     return unsub
   }, [])
   useEffect(() => {
-    if (hydrated) initSync()
+    if (!hydrated) return
+    useStore.getState().upgradeDefaults()
+    initSync()
   }, [hydrated])
 
   if (!hydrated) return null

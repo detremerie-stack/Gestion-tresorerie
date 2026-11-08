@@ -18,7 +18,6 @@ describe('subscriptions', () => {
   })
   it('adds account FX fee for foreign currencies', () => {
     expect(monthlyCost(base({ amount: 10, currency: 'USD' }), rates, 2.5)).toBe(1128)
-    expect(monthlyCost(base({ amount: 1000 }), rates, 2.5)).toBe(1000)
   })
   it('ignores paused and cancelled subscriptions in costs', () => {
     expect(monthlyCost(base({ status: 'paused' }), rates)).toBe(0)

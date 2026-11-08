@@ -6,7 +6,7 @@ import { COMMON, useAccounts, useAllTags, useCategories, useMembers } from '../d
 import { PALETTE } from '../data/defaults'
 import type { Subscription, SubscriptionStatus } from '../data/types'
 import { formatDate, today, type IntervalUnit } from '../lib/dates'
-import { CURRENCIES, formatMoney, isFixedRate, parseAmount, type Currency } from '../lib/money'
+import { CURRENCIES, effectiveFee, formatMoney, isFixedRate, parseAmount, type Currency } from '../lib/money'
 import { cycleLabel, dueForPayment, isExact, monthlyCost, nextPayment, paymentXPF, upcomingPayments, yearlyCost } from '../lib/subscriptions'
 import { Page, Section } from '../ui/Page'
 import { Field, Segmented, SelectField, Swatches, TextField } from '../ui/Field'
@@ -57,7 +57,8 @@ export default function SubscriptionForm() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const value = parseAmount(amount)
-  const fee = accounts.find((a) => a.id === accountId)?.fxFeePct ?? 0
+  const payAccount = accounts.find((a) => a.id === accountId)
+  const fee = effectiveFee(currency, payAccount?.currency, payAccount?.fxFeePct)
   const draft: Subscription = {
     ...(existing ?? { id: 'draft', updatedAt: '' }),
     name: name.trim(), plan: plan.trim() || undefined, amount: Number.isNaN(value) ? 0 : value, currency, every, unit, startDate,

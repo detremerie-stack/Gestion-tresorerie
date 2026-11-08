@@ -5,7 +5,7 @@ import { useList, useStore } from '../data/store'
 import { COMMON, useAccounts, useAllTags, useCategories, useMembers } from '../data/hooks'
 import type { Transaction, TxType } from '../data/types'
 import { today } from '../lib/dates'
-import { CURRENCIES, formatMoney, fromXPF, parseAmount, roundTo, toXPF, type Currency } from '../lib/money'
+import { CURRENCIES, effectiveFee, formatMoney, fromXPF, parseAmount, roundTo, toXPF, type Currency } from '../lib/money'
 import { cleanLabel, matchRule } from '../lib/rules'
 import { Page } from '../ui/Page'
 import { Field, Segmented, SelectField, TextField } from '../ui/Field'
@@ -52,9 +52,10 @@ export default function TransactionForm() {
   const [error, setError] = useState<string>()
 
   const foreign = !!account && currency !== account.currency
+  const fee = account ? effectiveFee(currency, account.currency, account.fxFeePct) : 0
   const value = parseAmount(amount)
   const suggestedDebit = foreign && !Number.isNaN(value)
-    ? fromXPF(toXPF(value, currency, rates) * (1 + (account!.fxFeePct || 0) / 100), account!.currency, rates)
+    ? fromXPF(toXPF(value, currency, rates) * (1 + fee / 100), account!.currency, rates)
     : undefined
   useEffect(() => {
     if (foreign && !debitedTouched) setDebited(suggestedDebit != null ? fmtInput(suggestedDebit, account!.currency) : '')
@@ -134,8 +135,8 @@ export default function TransactionForm() {
           <TextField label={`Montant débité sur le compte (${account!.currency})`} inputMode="decimal" value={debited}
             onChange={(v) => { setDebited(v); setDebitedTouched(true) }}
             hint={currency === 'EUR' && account!.currency === 'XPF'
-              ? `Parité fixe : ${formatMoney(value || 0, 'EUR')} = ${formatMoney(toXPF(value || 0, 'EUR', rates))}${account!.fxFeePct ? ` + ${account!.fxFeePct} % de frais` : ''}. Corrigez avec le montant réel du relevé.`
-              : `Estimation au taux du jour${account!.fxFeePct ? ` + ${account!.fxFeePct} % de frais` : ''}. Corrigez avec le montant réel du relevé.`} />
+              ? `Parité fixe : ${formatMoney(value || 0, 'EUR')} = ${formatMoney(toXPF(value || 0, 'EUR', rates))}${fee ? ` + ${fee} % de frais` : ''}. Corrigez avec le montant réel du relevé.`
+              : `Estimation au taux du jour${fee ? ` + ${fee} % de frais` : ''}. Corrigez avec le montant réel du relevé.`} />
         )}
 
         {type === 'transfer' ? (

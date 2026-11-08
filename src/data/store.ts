@@ -7,7 +7,7 @@ import { KINDS } from './types'
 import { LOAN_CATEGORY, defaultAccounts, defaultCategories, defaultMembers, defaultRules, paramappSubscriptions } from './defaults'
 import type { Installment } from '../lib/loans'
 import { uid } from '../lib/id'
-import { DEFAULT_RATES, formatMoney, fromXPF, toXPF } from '../lib/money'
+import { DEFAULT_RATES, effectiveFee, formatMoney, fromXPF, toXPF } from '../lib/money'
 
 type Maps = { [K in Kind]: Record<string, Collections[K]> }
 
@@ -40,6 +40,8 @@ export interface State {
   markSubscriptionPaid: (sub: Subscription, date: string, amountInAccount?: number) => Transaction
   markLoanPaid: (loan: Loan, inst: Installment) => Transaction
   ensureLoanCategory: () => string
+  /** Ajoute les nouveautés par défaut (règles, catégories) aux installations existantes. */
+  upgradeDefaults: () => void
   replaceAll: (data: Partial<Maps>) => void
 }
 
@@ -146,7 +148,7 @@ export const useStore = create<State>()(
         const account = sub.accountId ? s.data.accounts[sub.accountId] : undefined
         const foreign = !!account && account.currency !== sub.currency
         const converted = foreign
-          ? fromXPF(toXPF(sub.amount, sub.currency, s.settings.rates) * (1 + (sub.currency === 'XPF' ? 0 : account!.fxFeePct) / 100), account!.currency, s.settings.rates)
+          ? fromXPF(toXPF(sub.amount, sub.currency, s.settings.rates) * (1 + effectiveFee(sub.currency, account!.currency, account!.fxFeePct) / 100), account!.currency, s.settings.rates)
           : sub.amount
         const tx = s.upsert('transactions', {
           date,
@@ -165,6 +167,16 @@ export const useStore = create<State>()(
           s.upsert('subscriptions', { ...sub, lastPaidDate: date, status: sub.status === 'trial' ? 'active' : sub.status })
         }
         return tx
+      },
+
+      upgradeDefaults: () => {
+        const s = getState()
+        if (!s.onboarded) return
+        const known = new Set(Object.values(s.data.rules).map((r) => r.pattern.toLowerCase()))
+        const missing = defaultRules().filter((r) => !known.has(r.pattern.toLowerCase()) && !s.data.rules[r.id])
+        if (missing.length) s.upsertMany('rules', missing)
+        const cats = defaultCategories().filter((c) => !s.data.categories[c.id])
+        if (cats.length) s.upsertMany('categories', cats)
       },
 
       ensureLoanCategory: () => {

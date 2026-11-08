@@ -69,6 +69,28 @@ describe('csv', () => {
   })
 })
 
+describe('banque de tahiti csv', () => {
+  // Format de l'export « Liste des mouvements » (données fictives).
+  const bt = `sep=;
+Titulaire du compte;N° de compte;Date de valeur;Date d'opération;Description;Débit;Devise;Crédit;Devise;Solde intermédiaire;Devise
+M DUPONT;123;06/11/2026;05/11/2026;CB12345- 02/11 BOULANGERIE TEST XPF 00002890,00;2890,00;XPF;;;100000,00;XPF
+M DUPONT;123;05/11/2026;05/11/2026;VIR DE SARL EMPLOYEUR TEST SALAIRE;;;350000,00;XPF;102890,00;XPF
+`
+  it('uses the operation date and debit/credit columns, skipping the sep= line', () => {
+    const rows = parseCSV(bt, detectDelimiter(bt))
+    const m = guessMapping(rows, ';')
+    expect(m.skipRows).toBe(1)
+    expect(m.dateCol).toBe(3)
+    expect(m.labelCol).toBe(4)
+    expect(m.debitCol).toBe(5)
+    expect(m.creditCol).toBe(7)
+    expect(applyMapping(rows, m).rows).toEqual([
+      { date: '2026-11-05', label: 'CB12345- 02/11 BOULANGERIE TEST XPF 00002890,00', amount: -2890 },
+      { date: '2026-11-05', label: 'VIR DE SARL EMPLOYEUR TEST SALAIRE', amount: 350000 },
+    ])
+  })
+})
+
 describe('ofx', () => {
   it('parses SGML OFX', () => {
     const ofx = `OFXHEADER:100

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EUR_XPF, formatMoney, parseAmount, toXPF, fromXPF, roundTo } from './money'
+import { EUR_XPF, effectiveFee, formatMoney, parseAmount, toXPF, fromXPF, roundTo } from './money'
 
 const rates = { USD: 110.5 }
 
@@ -33,6 +33,14 @@ describe('money', () => {
     expect(parseAmount('(45.00)')).toBe(-45)
     expect(parseAmount('')).toBeNaN()
     expect(parseAmount('1,000')).toBe(1000)
+  })
+  it('applies FX fees only between non-pegged currencies', () => {
+    expect(effectiveFee('USD', 'EUR', 2.8)).toBe(2.8)
+    expect(effectiveFee('USD', 'XPF', 2.8)).toBe(2.8)
+    expect(effectiveFee('XPF', 'EUR', 2.8)).toBe(0)
+    expect(effectiveFee('EUR', 'XPF', 2.8)).toBe(0)
+    expect(effectiveFee('EUR', 'EUR', 2.8)).toBe(0)
+    expect(effectiveFee('USD', undefined, 2.8)).toBe(0)
   })
   it('rounds by currency', () => {
     expect(roundTo(10.555, 'EUR')).toBe(10.56)

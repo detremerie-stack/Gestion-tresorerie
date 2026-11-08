@@ -33,7 +33,7 @@ export default function Accounts() {
                   <span className="title">{a.name}</span>
                   <span className="sub">
                     {INSTITUTIONS.find((i) => i.value === a.institution)?.label} · {a.currency}
-                    {a.fxFeePct ? ` · frais change ${a.fxFeePct} %` : ''}
+                    {a.fxFeePct ? ` · frais change ${String(a.fxFeePct).replace('.', ',')} %` : ''}
                     {a.currency !== 'XPF' ? ' · ' : ''}{a.currency !== 'XPF' && <Money value={xpf} approx={a.currency !== 'EUR'} />}
                   </span>
                 </div>

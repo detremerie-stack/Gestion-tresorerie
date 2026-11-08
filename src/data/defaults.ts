@@ -17,7 +17,7 @@ export function defaultMembers(): Member[] {
 export function defaultAccounts(): Account[] {
   return stamp<Account>([
     { id: 'a-bt', name: 'Banque de Tahiti', type: 'checking', institution: 'banque-de-tahiti', currency: 'XPF', initialBalance: 0, fxFeePct: 0, color: '#0E7490' },
-    { id: 'a-amex', name: 'American Express', type: 'credit', institution: 'amex', currency: 'XPF', initialBalance: 0, fxFeePct: 0, color: '#2563EB' },
+    { id: 'a-amex', name: 'American Express', type: 'credit', institution: 'amex', currency: 'EUR', initialBalance: 0, fxFeePct: 2.8, color: '#2563EB' },
     { id: 'a-deblock', name: 'Deblock', type: 'checking', institution: 'deblock', currency: 'EUR', initialBalance: 0, fxFeePct: 0, color: '#9333EA' },
     { id: 'a-cash', name: 'Espèces', type: 'cash', institution: 'cash', currency: 'XPF', initialBalance: 0, fxFeePct: 0, color: '#15803D' },
   ])
@@ -79,14 +79,23 @@ const LOCAL_RULES: [string, string][] = [
   ['apple.com', 'abonnements'], ['canal', 'abonnements'], ['dashlane', 'abonnements'], ['playstation', 'abonnements'], ['amazon prime', 'abonnements'],
   ['dgi', 'impots'], ['tresor public', 'impots'], ['contributions', 'impots'], ['paierie', 'impots'],
   ['cotisation', 'banque'], ['frais', 'banque'], ['commission', 'banque'], ['agios', 'banque'],
+  ['mc donalds', 'restaurants'], ['mcdonalds', 'restaurants'], ['mc do', 'restaurants'],
+  ['ls proxi', 'courses'], ['lucky store', 'courses'], ['market express', 'courses'], ['asia market', 'courses'], ['proxi', 'courses'],
+  ['animaland', 'animaux'], ['veto', 'animaux'], ['dispensaire vet', 'animaux'], ['clin.veto', 'animaux'],
+  ['isis medical', 'sante'], ['mncap', 'assurances'], ['groupama', 'assurances'], ['gan outre mer', 'assurances'],
+  ['tiare net', 'banque'], ['frais tenue', 'banque'], ['cotis carte', 'banque'],
+  ['netflix', 'abonnements'], ['spotify', 'abonnements'], ['google play', 'abonnements'],
+  ['pret personnel', 'credits'], ['pret habitat', 'credits'], ['pret immobilier', 'credits'],
+  ['caisse de prevoyance', 'c-allocations'], ['resto', 'restaurants'], ['fournil', 'courses'], ['boulangerie', 'courses'], ['patisserie', 'courses'],
   ['echeance pret', 'credits'], ['remboursement pret', 'credits'], ['ech pret', 'credits'], ['credit immo', 'credits'], ['pret immo', 'credits'],
   ['salaire', 'c-salaire'],
 ]
 
 export function defaultRules(): Rule[] {
   return stamp<Rule>(
-    LOCAL_RULES.map(([pattern, cat], i) => ({
-      id: `r-${i}`,
+    LOCAL_RULES.map(([pattern, cat]) => ({
+      // Identifiant stable dérivé du motif : permet d'ajouter de nouvelles règles aux installations existantes.
+      id: `r-${pattern.replace(/[^a-z0-9]+/gi, '-')}`,
       pattern,
       categoryId: cat.startsWith('c-') ? cat : `c-${cat}`,
     })),

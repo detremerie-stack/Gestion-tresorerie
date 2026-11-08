@@ -7,7 +7,7 @@ import { addInterval, daysBetween, formatShortDate, monthKey, monthLabel, today 
 import { byCategory, totals } from '../lib/reports'
 import { dueForPayment, isExact, paymentXPF, upcomingPayments } from '../lib/subscriptions'
 import { dueInstallments, installmentsBetween, loanStatus } from '../lib/loans'
-import { isFixedRate, toXPF } from '../lib/money'
+import { effectiveFee, isFixedRate, toXPF } from '../lib/money'
 import { Money } from '../ui/Money'
 import { Page, Section } from '../ui/Page'
 import { Meter, RankedBars } from '../ui/Charts'
@@ -42,7 +42,8 @@ export default function Dashboard() {
     const from = addInterval(t, 1, 'day')
     const to = addInterval(t, 30, 'day')
     const subItems = upcomingPayments(subs, from, to).map(({ sub, date }) => {
-      const fee = accountsMap.get(sub.accountId ?? '')?.fxFeePct
+      const acc = accountsMap.get(sub.accountId ?? '')
+      const fee = effectiveFee(sub.currency, acc?.currency, acc?.fxFeePct)
       return { key: sub.id + date, name: sub.name, date, xpf: paymentXPF(sub, rates, fee), approx: !isExact(sub, fee), color: sub.color, to: `/abonnements/${sub.id}`, remind: sub.remindDays, pay: () => {} }
     })
     const loanItems = loans.flatMap((l) => installmentsBetween(l, from, to).map((inst) => ({

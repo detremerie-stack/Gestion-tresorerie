@@ -17,9 +17,9 @@ export interface RowError {
 }
 
 const KEYS = {
-  date: ['date operation', 'date de l operation', 'date', 'date comptable', 'transaction date', 'posted date', 'date valeur'],
+  date: ['date d operation', 'date operation', 'date de l operation', 'date', 'date comptable', 'transaction date', 'posted date', 'date valeur'],
   label: ['libelle', 'description', 'detail', 'intitule', 'operation', 'nature', 'merchant', 'payee', 'beneficiaire'],
-  amount: ['montant', 'amount', 'somme', 'valeur', 'montant xpf', 'montant eur'],
+  amount: ['montant', 'amount', 'somme', 'montant xpf', 'montant eur'],
   debit: ['debit', 'debits', 'sortie', 'retrait'],
   credit: ['credit', 'credits', 'entree', 'versement'],
 }

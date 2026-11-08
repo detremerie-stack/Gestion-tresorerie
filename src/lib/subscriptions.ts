@@ -21,7 +21,7 @@ export function yearlyCost(s: Subscription, rates: Rates, fxFeePct = 0): number 
 
 /** Montant d'un prélèvement converti en XPF (non arrondi). */
 export function paymentXPF(s: Subscription, rates: Rates, fxFeePct = 0): number {
-  const fee = s.currency === 'XPF' ? 0 : fxFeePct
+  const fee = fxFeePct
   return s.amount * rateOf(s.currency, rates) * (1 + fee / 100)
 }
 

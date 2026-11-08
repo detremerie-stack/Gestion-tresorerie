@@ -5,7 +5,7 @@ import { useList, useMap, useStore } from '../data/store'
 import type { Subscription } from '../data/types'
 import { addInterval, daysBetween, formatDate, monthKey, monthLabel, today } from '../lib/dates'
 import { costByTag, cycleLabel, dueForPayment, isActive, isExact, monthlyCost, nextPayment, paymentXPF, upcomingPayments, yearlyCost } from '../lib/subscriptions'
-import { formatMoney } from '../lib/money'
+import { effectiveFee, formatMoney } from '../lib/money'
 import { Money } from '../ui/Money'
 import { Empty, Page, Section } from '../ui/Page'
 import { Segmented } from '../ui/Field'
@@ -30,7 +30,10 @@ export default function Subscriptions() {
   const view = useStore((s) => s.settings.subscriptionsView)
   const setSettings = useStore((s) => s.setSettings)
   const t = today()
-  const fee = (s: Subscription) => accounts.get(s.accountId ?? '')?.fxFeePct ?? 0
+  const fee = (s: Subscription) => {
+    const a = accounts.get(s.accountId ?? '')
+    return effectiveFee(s.currency, a?.currency, a?.fxFeePct)
+  }
 
   const monthly = subs.reduce((sum, s) => sum + monthlyCost(s, rates, fee(s)), 0)
   const yearly = subs.reduce((sum, s) => sum + yearlyCost(s, rates, fee(s)), 0)

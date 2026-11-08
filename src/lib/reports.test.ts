@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { accountBalance, byCategory, byMonth, totals } from './reports'
-import { cleanLabel, matchRule } from './rules'
+import { cleanLabel, foreignAmount, matchRule } from './rules'
 import type { Account, Rule, Transaction } from '../data/types'
 
 const acc = (id: string, currency: Account['currency'] = 'XPF', initialBalance = 0): Account => ({
@@ -59,5 +59,16 @@ describe('rules', () => {
     expect(cleanLabel('CB CARREFOUR ARUE 05/11')).toBe('Carrefour Arue')
     expect(cleanLabel('PRLV SEPA NETFLIX.COM')).toBe('Netflix.com')
     expect(cleanLabel('Boulangerie')).toBe('Boulangerie')
+    // Formats Banque de Tahiti
+    expect(cleanLabel('CB92577- 03/11 ANIMALAND ARUE EUR           148,07')).toBe('Animaland Arue')
+    expect(cleanLabel('CB73655- 02/11 SC CHAMPION MAH XPF 00004614,00')).toBe('Sc Champion Mah')
+    expect(cleanLabel('RET.CB 65026- PIRAE')).toBe('Retrait Pirae')
+    expect(cleanLabel('PREL ONATI VINI 10Y2026 FAC202610119138')).toBe('Onati Vini 10y2026 Fac202610119138')
+    expect(cleanLabel('PREL C/C SAS VITI PRELEVEMENT VITI')).toBe('Viti Prelevement Viti')
+  })
+  it('extracts the original foreign amount of card payments', () => {
+    expect(foreignAmount('CB92577- 28/09 GARE MARITIME P EUR 9,22')).toEqual({ amount: 9.22, currency: 'EUR' })
+    expect(foreignAmount('CB92577- 03/11 ANIMALAND ARUE EUR           148,07')).toEqual({ amount: 148.07, currency: 'EUR' })
+    expect(foreignAmount('CB73655- 02/11 SC CHAMPION MAH XPF 00004614,00')).toBeUndefined()
   })
 })

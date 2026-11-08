@@ -14,7 +14,7 @@ export const INSTITUTIONS: { value: Institution; label: string; currency: Curren
   { value: 'banque-de-tahiti', label: 'Banque de Tahiti', currency: 'XPF', type: 'checking' },
   { value: 'socredo', label: 'Banque Socredo', currency: 'XPF', type: 'checking' },
   { value: 'banque-de-polynesie', label: 'Banque de Polynésie', currency: 'XPF', type: 'checking' },
-  { value: 'amex', label: 'American Express', currency: 'XPF', type: 'credit' },
+  { value: 'amex', label: 'American Express', currency: 'EUR', type: 'credit' },
   { value: 'deblock', label: 'Deblock', currency: 'EUR', type: 'checking' },
   { value: 'cash', label: 'Espèces', currency: 'XPF', type: 'cash' },
   { value: 'other', label: 'Autre', currency: 'XPF', type: 'checking' },
