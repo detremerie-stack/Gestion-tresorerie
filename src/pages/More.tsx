@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { BarChart3, ChevronRight, Cloud, FileText, Landmark, PiggyBank, Settings, Tags, Upload, Wand2 } from 'lucide-react'
+import { BarChart3, ChevronRight, Cloud, FileText, HandCoins, Landmark, PiggyBank, Settings, Tags, Upload, Wand2 } from 'lucide-react'
 import { Page } from '../ui/Page'
 import { useStore } from '../data/store'
 import { InstallCard } from '../ui/install'
@@ -8,6 +8,7 @@ const ITEMS = [
   { to: '/budgets', icon: PiggyBank, label: 'Budgets', sub: 'Plafonds mensuels par catégorie' },
   { to: '/rapports', icon: BarChart3, label: 'Rapports', sub: 'Où part l’argent, mois après mois' },
   { to: '/comptes', icon: Landmark, label: 'Comptes', sub: 'Banque de Tahiti, AmEx, Deblock, espèces' },
+  { to: '/prets', icon: HandCoins, label: 'Prêts', sub: 'Capital restant dû, échéancier, intérêts' },
   { to: '/import', icon: Upload, label: 'Importer un relevé', sub: 'Fichier CSV ou OFX de la banque' },
   { to: '/releve', icon: FileText, label: 'Relevé imprimable', sub: 'Par compte et par période, en PDF' },
   { to: '/parametres/categories', icon: Tags, label: 'Catégories', sub: 'Dépenses et revenus' },

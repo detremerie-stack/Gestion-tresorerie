@@ -21,6 +21,9 @@ import Settings from './pages/Settings'
 import CategoriesPage from './pages/Categories'
 import RulesPage from './pages/Rules'
 import SyncPage from './pages/Sync'
+import Loans from './pages/Loans'
+import LoanDetail from './pages/LoanDetail'
+import LoanForm from './pages/LoanForm'
 
 function useTheme() {
   const theme = useStore((s) => s.settings.theme)
@@ -125,6 +128,10 @@ export default function App() {
               <Route path="/comptes" element={<Accounts />} />
               <Route path="/comptes/nouveau" element={<AccountForm />} />
               <Route path="/comptes/:id" element={<AccountForm />} />
+              <Route path="/prets" element={<Loans />} />
+              <Route path="/prets/nouveau" element={<LoanForm />} />
+              <Route path="/prets/:id" element={<LoanDetail />} />
+              <Route path="/prets/:id/modifier" element={<LoanForm />} />
               <Route path="/import" element={<Import />} />
               <Route path="/releve" element={<Statement />} />
               <Route path="/parametres" element={<Settings />} />

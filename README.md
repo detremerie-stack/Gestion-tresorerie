@@ -12,6 +12,7 @@ d'un foyer en Polynésie française, à deux (Lionel et Véra), en **francs Paci
 | **Abonnements** | coût mensuel/annuel, cycles libres (jours/semaines/mois/ans), essais gratuits, pause/résiliation, paiements à venir, coût par étiquette et par compte, frais de change estimés, « Payé » → opération |
 | **Opérations** | dépenses, revenus, virements entre comptes ; montant en devise converti ; recherche et filtres (mois, compte, catégorie, étiquette, membre) |
 | **Comptes** | Banque de Tahiti, Socredo, Banque de Polynésie, American Express, Deblock, espèces ; soldes calculés |
+| **Prêts** | crédit immo/auto/conso : mensualité, tableau d'amortissement, capital restant dû, intérêts payés et coût total, assurance emprunteur, remboursements anticipés, échéances à enregistrer, patrimoine net |
 | **Budgets** | plafond mensuel par catégorie, alerte de dépassement et de rythme |
 | **Rapports** | évolution mensuelle, dépenses/revenus par catégorie, par personne, taux d'épargne |
 | **Import de relevés** | CSV (séparateur, encodage et colonnes détectés, mapping mémorisé par compte) et OFX ; doublons ignorés ; catégorisation automatique |

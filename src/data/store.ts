@@ -2,11 +2,12 @@ import { create } from 'zustand'
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import { del, get, set } from 'idb-keyval'
 import { useMemo } from 'react'
-import type { Collections, Kind, Settings, Subscription, Transaction } from './types'
+import type { Collections, Kind, Loan, Settings, Subscription, Transaction } from './types'
 import { KINDS } from './types'
-import { defaultAccounts, defaultCategories, defaultMembers, defaultRules, paramappSubscriptions } from './defaults'
+import { LOAN_CATEGORY, defaultAccounts, defaultCategories, defaultMembers, defaultRules, paramappSubscriptions } from './defaults'
+import type { Installment } from '../lib/loans'
 import { uid } from '../lib/id'
-import { DEFAULT_RATES, fromXPF, toXPF } from '../lib/money'
+import { DEFAULT_RATES, formatMoney, fromXPF, toXPF } from '../lib/money'
 
 type Maps = { [K in Kind]: Record<string, Collections[K]> }
 
@@ -37,6 +38,8 @@ export interface State {
   setSync: (p: Partial<SyncConfig>) => void
   completeOnboarding: (opts: { member: string; importParamapp: boolean }) => void
   markSubscriptionPaid: (sub: Subscription, date: string, amountInAccount?: number) => Transaction
+  markLoanPaid: (loan: Loan, inst: Installment) => Transaction
+  ensureLoanCategory: () => string
   replaceAll: (data: Partial<Maps>) => void
 }
 
@@ -161,6 +164,37 @@ export const useStore = create<State>()(
         if (!sub.lastPaidDate || date > sub.lastPaidDate) {
           s.upsert('subscriptions', { ...sub, lastPaidDate: date, status: sub.status === 'trial' ? 'active' : sub.status })
         }
+        return tx
+      },
+
+      ensureLoanCategory: () => {
+        const s = getState()
+        const existing = s.data.categories[LOAN_CATEGORY.id]
+        if (!existing || existing.deleted) s.upsert('categories', { ...LOAN_CATEGORY, deleted: false })
+        return LOAN_CATEGORY.id
+      },
+
+      markLoanPaid: (loan, inst) => {
+        const s = getState()
+        const account = loan.accountId ? s.data.accounts[loan.accountId] : undefined
+        const foreign = !!account && account.currency !== loan.currency
+        const amount = foreign
+          ? fromXPF(toXPF(inst.total, loan.currency, s.settings.rates), account!.currency, s.settings.rates)
+          : inst.total
+        const tx = s.upsert('transactions', {
+          date: inst.date,
+          type: 'expense',
+          amount,
+          accountId: loan.accountId ?? Object.values(s.data.accounts).find((a) => !a.deleted)?.id ?? '',
+          categoryId: loan.categoryId ?? s.ensureLoanCategory(),
+          tags: [],
+          payee: loan.lender || loan.name,
+          note: `${loan.name} · échéance ${inst.n} : intérêts ${formatMoney(inst.interest, loan.currency)}, capital ${formatMoney(inst.principal, loan.currency)}${inst.insurance ? `, assurance ${formatMoney(inst.insurance, loan.currency)}` : ''}`,
+          member: loan.member,
+          loanId: loan.id,
+          ...(foreign ? { originalAmount: inst.total, originalCurrency: loan.currency } : {}),
+        })
+        if (!loan.lastPaidDate || inst.date > loan.lastPaidDate) s.upsert('loans', { ...getState().data.loans[loan.id], lastPaidDate: inst.date })
         return tx
       },
 

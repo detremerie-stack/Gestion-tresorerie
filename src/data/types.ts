@@ -60,6 +60,7 @@ export interface Transaction extends Base {
   originalCurrency?: Currency
   member?: MemberId
   subscriptionId?: string
+  loanId?: string
   importHash?: string
   /** Libellé brut du relevé importé. */
   rawLabel?: string
@@ -90,6 +91,31 @@ export interface Subscription extends Base {
   /** Dernière échéance enregistrée comme payée (opération créée). */
   lastPaidDate?: ISODate
   cancelledOn?: ISODate
+}
+
+export interface Loan extends Base {
+  name: string
+  lender?: string
+  /** Capital emprunté. */
+  principal: number
+  currency: Currency
+  /** Taux nominal annuel en % (hors assurance). */
+  annualRate: number
+  /** Durée en mois. */
+  termMonths: number
+  /** Date de la première échéance. */
+  startDate: ISODate
+  /** Assurance emprunteur par mois (montant fixe). */
+  insuranceMonthly: number
+  /** Remboursements anticipés partiels : la mensualité reste la même, la durée raccourcit. */
+  extraRepayments: { date: ISODate; amount: number }[]
+  accountId?: string
+  categoryId?: string
+  member?: MemberId
+  color: string
+  notes?: string
+  /** Dernière échéance enregistrée comme payée (opération créée). */
+  lastPaidDate?: ISODate
 }
 
 export interface Budget extends Base {
@@ -144,6 +170,7 @@ export interface Collections {
   budgets: Budget
   rules: Rule
   members: Member
+  loans: Loan
 }
 export type Kind = keyof Collections
-export const KINDS: Kind[] = ['accounts', 'categories', 'transactions', 'subscriptions', 'budgets', 'rules', 'members']
+export const KINDS: Kind[] = ['accounts', 'categories', 'transactions', 'subscriptions', 'budgets', 'rules', 'members', 'loans']

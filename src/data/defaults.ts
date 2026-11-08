@@ -26,6 +26,9 @@ export function defaultAccounts(): Account[] {
 const E = (id: string, name: string, icon: string, color: string): Seed<Category> => ({ id: `c-${id}`, name, kind: 'expense', icon, color })
 const I = (id: string, name: string, icon: string, color: string): Seed<Category> => ({ id: `c-${id}`, name, kind: 'income', icon, color })
 
+/** Catégorie des échéances de prêt (créée au besoin pour les installations existantes). */
+export const LOAN_CATEGORY = { id: 'c-credits', name: 'Crédits & prêts', kind: 'expense' as const, icon: 'landmark', color: '#7C2D12' }
+
 export function defaultCategories(): Category[] {
   return stamp<Category>([
     E('logement', 'Logement', 'home', '#475569'),
@@ -47,6 +50,7 @@ export function defaultCategories(): Category[] {
     E('voyages', 'Voyages', 'plane', '#2563EB'),
     E('impots', 'Impôts & taxes', 'landmark', '#334155'),
     E('banque', 'Frais bancaires', 'credit-card', '#57534E'),
+    E('credits', 'Crédits & prêts', 'landmark', '#7C2D12'),
     E('cadeaux', 'Cadeaux & dons', 'gift', '#BE185D'),
     E('animaux', 'Animaux', 'paw-print', '#A16207'),
     E('divers', 'Divers', 'circle-dashed', '#6B7280'),
@@ -75,6 +79,7 @@ const LOCAL_RULES: [string, string][] = [
   ['apple.com', 'abonnements'], ['canal', 'abonnements'], ['dashlane', 'abonnements'], ['playstation', 'abonnements'], ['amazon prime', 'abonnements'],
   ['dgi', 'impots'], ['tresor public', 'impots'], ['contributions', 'impots'], ['paierie', 'impots'],
   ['cotisation', 'banque'], ['frais', 'banque'], ['commission', 'banque'], ['agios', 'banque'],
+  ['echeance pret', 'credits'], ['remboursement pret', 'credits'], ['ech pret', 'credits'], ['credit immo', 'credits'], ['pret immo', 'credits'],
   ['salaire', 'c-salaire'],
 ]
 

@@ -181,7 +181,13 @@ table.data .faint { font-size: inherit; }
 @keyframes fade { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
-@media (max-width: 600px) { .hide-sm { display: none; } }
+@media (max-width: 600px) {
+  .hide-sm { display: none; }
+  table.data { font-size: 13px; }
+  table.data th, table.data td { padding: 6px 6px; }
+  table.data th:first-child, table.data td:first-child { padding-left: 12px; }
+  table.data th:last-child, table.data td:last-child { padding-right: 12px; }
+}
 @media (min-width: 601px) { .statement-kpis { grid-template-columns: repeat(4, 1fr); } }
 
 /* ---------- Impression (relevés) ---------- */
