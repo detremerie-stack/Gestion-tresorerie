@@ -207,3 +207,38 @@ table.data .faint { font-size: inherit; }
   .hide-sm { display: revert !important; }
   .statement-kpis { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ---------- Accueil : bandeau, raccourcis, tuiles ---------- */
+.banner {
+  position: relative; overflow: hidden; color: #fff; border-radius: 24px; padding: var(--s5) var(--s5) var(--s4);
+  background: linear-gradient(140deg, #0e7490 0%, #155e75 55%, #164e63 100%);
+  box-shadow: 0 10px 30px rgb(14 116 144 / 28%); display: flex; flex-direction: column; gap: var(--s4);
+}
+.banner > * { position: relative; }
+.banner-waves { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 55%; }
+.banner-top { display: flex; align-items: center; justify-content: space-between; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: 0.01em; }
+.brand img { border-radius: 9px; box-shadow: 0 0 0 2px rgb(255 255 255 / 25%); }
+.banner-icon { display: grid; place-items: center; width: var(--tap); height: var(--tap); border-radius: 50%; color: #fff; background: rgb(255 255 255 / 12%); }
+.banner-hello { margin: 0; font-size: 26px; font-weight: 750; letter-spacing: -0.01em; }
+.banner-date { font-size: 14px; color: rgb(255 255 255 / 90%); display: block; }
+.banner-date::first-letter { text-transform: uppercase; }
+.banner-balance { display: flex; flex-direction: column; gap: 2px; }
+.banner-balance > span:first-child { font-size: 13px; color: rgb(255 255 255 / 90%); }
+.banner-amount { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.banner-small { font-size: 13px; color: rgb(255 255 255 / 90%); }
+.banner-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.banner-kpis > div { display: flex; flex-direction: column; gap: 2px; padding: var(--s2) var(--s3); border-radius: 14px; background: rgb(255 255 255 / 12%); }
+.banner-kpis span:first-child { display: flex; align-items: center; gap: 6px; font-size: 12px; color: rgb(255 255 255 / 92%); }
+.banner-kpis .num { font-weight: 700; font-size: 17px; }
+.quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); margin-top: calc(-1 * var(--s2)); }
+.quick-actions a { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text); padding: var(--s2) 0; border-radius: var(--r-card); }
+.quick-actions a span { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 18px; background: var(--surface); color: var(--primary); box-shadow: var(--shadow); }
+.quick-actions a:active span { transform: scale(0.96); }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.tile { display: flex; flex-direction: column; gap: 4px; padding: var(--s4); border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow); color: inherit; min-height: 108px; }
+.tile-label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tile-label svg { color: var(--primary); flex: none; }
+.tile-value { font-size: 20px; font-weight: 750; }
+.tile-sub { font-size: 12px; color: var(--text-3); }
+@media print { .banner, .quick-actions, .tiles { display: none; } }

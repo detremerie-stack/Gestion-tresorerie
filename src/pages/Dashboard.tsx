@@ -1,17 +1,17 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertCircle, CalendarClock, Check, LineChart, Plane, TrendingDown, TrendingUp } from 'lucide-react'
+import { AlertCircle, CalendarClock, Check, Landmark, LineChart, Minus, PiggyBank, Plane, Plus, Repeat, Settings, TrendingDown, TrendingUp, Upload } from 'lucide-react'
 import { useList, useMap, useStore } from '../data/store'
 import { useAccounts, useBalances } from '../data/hooks'
 import { useForecast } from '../data/useForecast'
 import { useTripStatuses } from './Trips'
-import { addInterval, daysBetween, formatShortDate, monthKey, monthLabel, today } from '../lib/dates'
+import { addInterval, daysBetween, formatLongDate, formatShortDate, monthKey, monthLabel, today } from '../lib/dates'
 import { byCategory, totals } from '../lib/reports'
-import { dueForPayment, isExact, paymentXPF, upcomingPayments } from '../lib/subscriptions'
+import { dueForPayment, isActive, isExact, monthlyCost, paymentXPF, upcomingPayments } from '../lib/subscriptions'
 import { dueInstallments, installmentsBetween, loanStatus } from '../lib/loans'
 import { effectiveFee, formatMoney, isFixedRate, toXPF } from '../lib/money'
 import { Money } from '../ui/Money'
-import { Page, Section } from '../ui/Page'
+import { Section } from '../ui/Page'
 import { Meter, RankedBars } from '../ui/Charts'
 import { CatIcon } from '../ui/Icon'
 import { useToast } from '../ui/toast'
@@ -77,6 +77,12 @@ export default function Dashboard() {
   }, [subs, loans, t, markPaid, markLoanPaid, remove, toast])
   const upcomingTotal = upcoming.reduce((s, u) => s + u.xpf, 0)
   const loanRows = loans.map((l) => ({ l, st: loanStatus(l, t) })).filter((r) => r.st.remaining > 0)
+  const subsMonthly = subs.reduce((sum, sub) => {
+    const acc = accountsMap.get(sub.accountId ?? '')
+    return sum + monthlyCost(sub, rates, effectiveFee(sub.currency, acc?.currency, acc?.fxFeePct))
+  }, 0)
+  const activeSubs = subs.filter(isActive).length
+  const loanMonthly = loanRows.reduce((sum, r) => sum + toXPF(r.st.payment + r.l.insuranceMonthly, r.l.currency, rates), 0)
   const debt = loanRows.reduce((s, r) => s + toXPF(r.st.remaining, r.l.currency, rates), 0)
 
   const budgetRows = budgets
@@ -86,39 +92,72 @@ export default function Dashboard() {
     .slice(0, 3)
 
   return (
-    <Page title={me ? `Ia ora na, ${me}` : 'Accueil'}>
-      <div className="card stack" style={{ gap: 16 }}>
-        <div className="hero">
-          <span className="label">Solde de tous les comptes</span>
-          <Money className="value" value={balances.total} approx={balances.approx} />
-          {debt > 0 && <span className="faint">Prêts restant dus : <Money value={debt} /> · patrimoine net <Money value={balances.total - debt} /></span>}
+    <main className="page">
+      <section className="banner" aria-label="Résumé du foyer">
+        <svg className="banner-waves" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 70 C 70 45, 130 95, 200 70 S 330 45, 400 70 V120 H0Z" fill="#fff" opacity=".07" />
+          <path d="M0 92 C 70 67, 130 117, 200 92 S 330 67, 400 92 V120 H0Z" fill="#fff" opacity=".08" />
+        </svg>
+        <div className="banner-top">
+          <span className="brand"><img src="./icon.svg" alt="" width={32} height={32} />Fare Moni</span>
+          <Link to="/parametres" className="banner-icon" aria-label="Paramètres"><Settings size={20} /></Link>
         </div>
-        <div className="kpis">
-          <div className="kpi">
-            <span className="label"><TrendingUp size={16} className="income" />Revenus · {monthLabel(month).split(' ')[0]}</span>
-            <Money className="value" value={tot.income} />
-          </div>
-          <div className="kpi">
-            <span className="label"><TrendingDown size={16} className="expense" />Dépenses · {monthLabel(month).split(' ')[0]}</span>
-            <Money className="value" value={tot.expense} />
-          </div>
+        <div>
+          <h1 className="banner-hello">Ia ora na{me ? `, ${me}` : ''}</h1>
+          <span className="banner-date">{formatLongDate(t)}</span>
         </div>
-      </div>
+        <div className="banner-balance">
+          <span>Solde de tous les comptes</span>
+          <Money className="banner-amount" value={balances.total} approx={balances.approx} />
+          {debt > 0 && <span className="banner-small">Prêts restant dus <Money value={debt} /> · patrimoine net <Money value={balances.total - debt} /></span>}
+        </div>
+        <div className="banner-kpis">
+          <div><span><TrendingUp size={15} aria-hidden />Entrées en {monthLabel(month).split(' ')[0]}</span><Money className="num" value={tot.income} sign /></div>
+          <div><span><TrendingDown size={15} aria-hidden />Sorties en {monthLabel(month).split(' ')[0]}</span><Money className="num" value={-tot.expense} /></div>
+        </div>
+      </section>
 
-      <div className="grid-2">
-        <Link to="/previsionnel" className="card stack" style={{ color: 'inherit', gap: 4 }}>
-          <span className="faint" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><LineChart size={16} />Prévu fin {monthLabel(fc.rows[1].month).split(' ')[0]}</span>
-          <Money className={`num ${fc.rows[1].endBalance < 0 ? 'expense' : ''}`} value={fc.rows[1].endBalance} approx />
-          {fc.rows.some((r) => r.endBalance < 0) && <span className="badge warn">Passage sous zéro</span>}
+      <nav className="quick-actions" aria-label="Raccourcis">
+        <Link to="/operations/nouvelle?type=expense"><span><Minus size={22} /></span>Dépense</Link>
+        <Link to="/operations/nouvelle?type=income"><span><Plus size={22} /></span>Revenu</Link>
+        <Link to="/import"><span><Upload size={20} /></span>Relevé</Link>
+        <Link to="/previsionnel"><span><LineChart size={20} /></span>Prévisions</Link>
+      </nav>
+
+      <div className="tiles">
+        <Link to="/previsionnel" className="tile">
+          <span className="tile-label"><LineChart size={16} aria-hidden />Prévu fin {monthLabel(fc.rows[1].month).split(' ')[0]}</span>
+          <Money className={`tile-value ${fc.rows[1].endBalance < 0 ? 'expense' : ''}`} value={fc.rows[1].endBalance} approx />
+          {fc.rows.some((r) => r.endBalance < 0) ? <span className="badge warn">Passage sous zéro</span> : <span className="tile-sub">solde estimé</span>}
         </Link>
-        <Link to={nextTrip ? `/voyages/${nextTrip.trip.id}` : '/voyages/nouveau'} className="card stack" style={{ color: 'inherit', gap: 4 }}>
-          <span className="faint" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><Plane size={16} />{nextTrip ? nextTrip.trip.name : 'Voyage'}</span>
+        <Link to={nextTrip ? `/voyages/${nextTrip.trip.id}` : '/voyages/nouveau'} className="tile">
+          <span className="tile-label"><Plane size={16} aria-hidden />{nextTrip ? nextTrip.trip.name : 'Voyage'}</span>
           {nextTrip ? (
             <>
-              <strong className="num">{nextTrip.st.phase === 'pendant' ? 'En cours' : `J−${nextTrip.st.daysToGo}`}</strong>
-              <span className="faint">{nextTrip.st.toSave > 0 ? `${formatMoney(nextTrip.st.perMonth)}/mois à épargner` : 'Budget couvert ✓'}</span>
+              <strong className="tile-value num">{nextTrip.st.phase === 'pendant' ? 'En cours' : `J−${nextTrip.st.daysToGo}`}</strong>
+              <span className="tile-sub">{nextTrip.st.toSave > 0 ? `${formatMoney(nextTrip.st.perMonth)}/mois à épargner` : 'Budget couvert ✓'}</span>
             </>
-          ) : <span className="muted">Préparer un voyage</span>}
+          ) : <><strong className="tile-value">Préparer</strong><span className="tile-sub">budget et épargne</span></>}
+        </Link>
+        <Link to="/abonnements" className="tile">
+          <span className="tile-label"><Repeat size={16} aria-hidden />Abonnements</span>
+          <Money className="tile-value" value={subsMonthly} approx />
+          <span className="tile-sub">par mois · {activeSubs} actifs</span>
+        </Link>
+        <Link to={loanRows.length ? '/prets' : '/budgets'} className="tile">
+          {loanRows.length ? (
+            <>
+              <span className="tile-label"><Landmark size={16} aria-hidden />Prêts</span>
+              <Money className="tile-value" value={debt} />
+              <span className="tile-sub">restant dû · {formatMoney(loanMonthly)}/mois</span>
+            </>
+          ) : (
+            <>
+              <span className="tile-label"><PiggyBank size={16} aria-hidden />Budgets</span>
+              <strong className="tile-value">{budgets.length}</strong>
+              <span className="tile-sub">plafonds suivis</span>
+            </>
+          )}
         </Link>
       </div>
 
@@ -254,6 +293,6 @@ export default function Dashboard() {
           </ul>
         </div>
       </Section>
-    </Page>
+    </main>
   )
 }

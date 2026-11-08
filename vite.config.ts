@@ -13,8 +13,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Moni — Budget du foyer',
-        short_name: 'Moni',
+        name: 'Fare Moni — l’argent de la maison',
+        short_name: 'Fare Moni',
         description: 'Abonnements, comptes et budget en francs Pacifique (XPF).',
         lang: 'fr',
         start_url: './',

@@ -40,7 +40,7 @@ export default function More() {
           ))}
         </ul>
       </div>
-      <p className="faint" style={{ textAlign: 'center' }}>Moni · version {__APP_VERSION__} · sans publicité</p>
+      <p className="faint" style={{ textAlign: 'center' }}>Fare Moni · version {__APP_VERSION__} · sans publicité</p>
     </Page>
   )
 }

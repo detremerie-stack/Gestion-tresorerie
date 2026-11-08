@@ -16,7 +16,7 @@ export default function Onboarding() {
   return (
     <main className="page" style={{ paddingTop: 48 }}>
       <div className="stack">
-        <p className="faint" style={{ margin: 0 }}>Moni · budget du foyer</p>
+        <p className="faint" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}><img src="./icon.svg" alt="" width={28} height={28} style={{ borderRadius: 8 }} />Fare Moni</p>
         <h1 style={{ fontSize: 34, margin: 0, letterSpacing: '-0.02em' }}>Ia ora na&nbsp;!</h1>
         <p className="muted" style={{ margin: 0 }}>
           Vos abonnements, vos comptes et votre budget en francs Pacifique, partagés entre Lionel et Véra.

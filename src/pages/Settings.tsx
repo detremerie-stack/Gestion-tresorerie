@@ -39,7 +39,7 @@ export default function Settings() {
     const blob = new Blob([JSON.stringify({ app: 'moni', version: 1, exportedAt: new Date().toISOString(), data: s.data, settings: s.settings }, null, 1)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `moni-sauvegarde-${today()}.json`
+    a.download = `fare-moni-sauvegarde-${today()}.json`
     a.click()
     URL.revokeObjectURL(a.href)
   }

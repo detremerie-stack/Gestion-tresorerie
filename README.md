@@ -1,6 +1,6 @@
-# Moni — Budget du foyer 🌺
+# Fare Moni — l'argent de la maison 🌺
 
-> *Moni* : « argent » en reo tahiti.
+> *Fare* : « maison », *moni* : « argent » en reo tahiti.
 
 Application web (installable sur Android) pour gérer **les abonnements, les comptes et le budget**
 d'un foyer en Polynésie française, à deux (Lionel et Véra), en **francs Pacifique (XPF)**.

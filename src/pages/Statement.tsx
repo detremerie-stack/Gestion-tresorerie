@@ -82,7 +82,7 @@ export default function Statement() {
               <strong style={{ fontSize: 18 }}>Relevé de compte · {account.name}</strong>
               <div className="faint">Du {formatDate(from)} au {formatDate(to)} · {cur}{household ? ` · Foyer ${household}` : ''}</div>
             </div>
-            <span className="faint print-only">Édité le {formatDate(today())} · Moni</span>
+            <span className="faint print-only">Édité le {formatDate(today())} · Fare Moni</span>
           </div>
           <div className="kpis statement-kpis">
             <div className="kpi"><span className="label">Solde début</span><span className="num">{f(data.opening)}</span></div>

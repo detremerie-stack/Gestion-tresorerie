@@ -1,4 +1,4 @@
-# DESIGN.md — Moni
+# DESIGN.md — Fare Moni
 
 > Niveau de maturité : **L0 → L1**. Aucun design system n'existait ; ces valeurs ont été
 > posées pour la v1 et sont **provisoires** : à réviser si un vrai DS est adopté.
