@@ -4,6 +4,7 @@ import { Cloud, Repeat } from 'lucide-react'
 import { useStore } from '../data/store'
 import { defaultMembers, paramappSubscriptions } from '../data/defaults'
 import { Segmented } from '../ui/Field'
+import { InstallCard } from '../ui/install'
 
 export default function Onboarding() {
   const complete = useStore((s) => s.completeOnboarding)
@@ -39,6 +40,8 @@ export default function Onboarding() {
           <Repeat size={18} /> Commencer
         </button>
       </div>
+
+      <InstallCard />
 
       <div className="card stack">
         <strong>Véra, Lionel a déjà commencé ?</strong>

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { BarChart3, ChevronRight, Cloud, FileText, Landmark, PiggyBank, Settings, Tags, Upload, Wand2 } from 'lucide-react'
 import { Page } from '../ui/Page'
 import { useStore } from '../data/store'
+import { InstallCard } from '../ui/install'
 
 const ITEMS = [
   { to: '/budgets', icon: PiggyBank, label: 'Budgets', sub: 'Plafonds mensuels par catégorie' },
@@ -19,6 +20,7 @@ export default function More() {
   const household = useStore((s) => s.sync.householdName)
   return (
     <Page title="Plus">
+      <InstallCard />
       <div className="card flush">
         <ul className="list">
           {ITEMS.map(({ to, icon: I, label, sub }) => (
