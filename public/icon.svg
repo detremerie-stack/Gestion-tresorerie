@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0E7490"/>
+  <path d="M0 360 C 90 320, 170 400, 256 360 S 420 320, 512 360 V512 H0Z" fill="#22A3C4" opacity=".55"/>
+  <path d="M0 410 C 90 370, 170 450, 256 410 S 420 370, 512 410 V512 H0Z" fill="#0891B2" opacity=".7"/>
+  <text x="256" y="300" text-anchor="middle" font-family="system-ui, Roboto, Arial, sans-serif" font-size="230" font-weight="800" fill="#fff">F</text>
+  <circle cx="384" cy="150" r="44" fill="#FBBF24"/>
+</svg>

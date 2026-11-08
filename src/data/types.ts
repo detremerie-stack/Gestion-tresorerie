@@ -1,0 +1,149 @@
+import type { Currency, Rates } from '../lib/money'
+import type { DateOrder, ISODate, IntervalUnit } from '../lib/dates'
+
+/** Champs communs à tous les enregistrements synchronisés. */
+export interface Base {
+  id: string
+  updatedAt: string
+  deleted?: boolean
+  createdBy?: string
+}
+
+/** Qui est concerné : un membre du foyer ou « commun ». */
+export type MemberId = string
+
+export type Institution = 'banque-de-tahiti' | 'socredo' | 'banque-de-polynesie' | 'amex' | 'deblock' | 'cash' | 'other'
+export type AccountType = 'checking' | 'savings' | 'credit' | 'cash'
+
+export interface Account extends Base {
+  name: string
+  type: AccountType
+  institution: Institution
+  currency: Currency
+  initialBalance: number
+  initialDate?: ISODate
+  /** Frais sur paiements en devise étrangère, en % (ex. 2.5). */
+  fxFeePct: number
+  color: string
+  owner?: MemberId
+  archived?: boolean
+  /** Mapping d'import mémorisé pour ce compte. */
+  importMapping?: ImportMapping
+}
+
+export type CategoryKind = 'expense' | 'income'
+
+export interface Category extends Base {
+  name: string
+  kind: CategoryKind
+  icon: string
+  color: string
+}
+
+export type TxType = 'expense' | 'income' | 'transfer'
+
+export interface Transaction extends Base {
+  date: ISODate
+  type: TxType
+  /** Montant positif, dans la devise du compte. */
+  amount: number
+  accountId: string
+  /** Virements : compte de destination et montant reçu (dans sa devise). */
+  toAccountId?: string
+  toAmount?: number
+  categoryId?: string
+  tags: string[]
+  payee?: string
+  note?: string
+  /** Montant d'origine si payé dans une autre devise que celle du compte. */
+  originalAmount?: number
+  originalCurrency?: Currency
+  member?: MemberId
+  subscriptionId?: string
+  importHash?: string
+  /** Libellé brut du relevé importé. */
+  rawLabel?: string
+}
+
+export type SubscriptionStatus = 'active' | 'trial' | 'paused' | 'cancelled'
+
+export interface Subscription extends Base {
+  name: string
+  plan?: string
+  amount: number
+  currency: Currency
+  every: number
+  unit: IntervalUnit
+  startDate: ISODate
+  /** Date de fin d'essai gratuit ; le premier paiement a lieu à cette date. */
+  trialEnd?: ISODate
+  status: SubscriptionStatus
+  accountId?: string
+  categoryId?: string
+  tags: string[]
+  color: string
+  member?: MemberId
+  url?: string
+  notes?: string
+  /** Rappel N jours avant le prélèvement. */
+  remindDays: number
+  /** Dernière échéance enregistrée comme payée (opération créée). */
+  lastPaidDate?: ISODate
+  cancelledOn?: ISODate
+}
+
+export interface Budget extends Base {
+  categoryId: string
+  /** Plafond mensuel en XPF. */
+  amount: number
+}
+
+export interface Rule extends Base {
+  /** Texte recherché dans le libellé (insensible à la casse et aux accents). */
+  pattern: string
+  categoryId?: string
+  payee?: string
+  tags?: string[]
+}
+
+export interface Member extends Base {
+  name: string
+  color: string
+}
+
+export interface ImportMapping {
+  delimiter: string
+  hasHeader: boolean
+  dateCol: number
+  labelCol: number
+  /** Une colonne montant signée, ou deux colonnes débit/crédit. */
+  amountCol?: number
+  debitCol?: number
+  creditCol?: number
+  dateOrder: DateOrder
+  /** Inverser le signe (cartes de crédit où les dépenses sont positives, ex. AmEx). */
+  invert: boolean
+  skipRows: number
+}
+
+export interface Settings {
+  rates: Rates
+  ratesUpdatedAt?: string
+  theme: 'system' | 'light' | 'dark'
+  /** Identifiant du membre utilisant cet appareil. */
+  currentMember?: MemberId
+  subscriptionsView: 'month' | 'year'
+}
+
+/** Collections synchronisées (une « kind » par collection). */
+export interface Collections {
+  accounts: Account
+  categories: Category
+  transactions: Transaction
+  subscriptions: Subscription
+  budgets: Budget
+  rules: Rule
+  members: Member
+}
+export type Kind = keyof Collections
+export const KINDS: Kind[] = ['accounts', 'categories', 'transactions', 'subscriptions', 'budgets', 'rules', 'members']
