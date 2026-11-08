@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
-import { BarChart3, ChevronRight, Cloud, FileText, HandCoins, Landmark, PiggyBank, Settings, Tags, Upload, Wand2 } from 'lucide-react'
+import { BarChart3, ChevronRight, Cloud, FileText, HandCoins, Landmark, LineChart, PiggyBank, Plane, Settings, Tags, Upload, Wand2 } from 'lucide-react'
 import { Page } from '../ui/Page'
 import { useStore } from '../data/store'
 import { InstallCard } from '../ui/install'
 
 const ITEMS = [
+  { to: '/previsionnel', icon: LineChart, label: 'Prévisionnel', sub: 'Solde prévu mois par mois, entrées et sorties prévues' },
+  { to: '/voyages', icon: Plane, label: 'Voyages', sub: 'Budget, épargne et dépenses de vos voyages' },
   { to: '/budgets', icon: PiggyBank, label: 'Budgets', sub: 'Plafonds mensuels par catégorie' },
   { to: '/rapports', icon: BarChart3, label: 'Rapports', sub: 'Où part l’argent, mois après mois' },
   { to: '/comptes', icon: Landmark, label: 'Comptes', sub: 'Banque de Tahiti, AmEx, Deblock, espèces' },

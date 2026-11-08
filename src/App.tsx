@@ -24,6 +24,11 @@ import SyncPage from './pages/Sync'
 import Loans from './pages/Loans'
 import LoanDetail from './pages/LoanDetail'
 import LoanForm from './pages/LoanForm'
+import Forecast from './pages/Forecast'
+import PlannedForm from './pages/PlannedForm'
+import Trips from './pages/Trips'
+import TripDetail from './pages/TripDetail'
+import TripForm from './pages/TripForm'
 
 function useTheme() {
   const theme = useStore((s) => s.settings.theme)
@@ -134,6 +139,13 @@ export default function App() {
               <Route path="/prets/nouveau" element={<LoanForm />} />
               <Route path="/prets/:id" element={<LoanDetail />} />
               <Route path="/prets/:id/modifier" element={<LoanForm />} />
+              <Route path="/previsionnel" element={<Forecast />} />
+              <Route path="/previsionnel/nouveau" element={<PlannedForm />} />
+              <Route path="/previsionnel/:id" element={<PlannedForm />} />
+              <Route path="/voyages" element={<Trips />} />
+              <Route path="/voyages/nouveau" element={<TripForm />} />
+              <Route path="/voyages/:id" element={<TripDetail />} />
+              <Route path="/voyages/:id/modifier" element={<TripForm />} />
               <Route path="/import" element={<Import />} />
               <Route path="/releve" element={<Statement />} />
               <Route path="/parametres" element={<Settings />} />

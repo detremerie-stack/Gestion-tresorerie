@@ -13,6 +13,9 @@ d'un foyer en Polynésie française, à deux (Lionel et Véra), en **francs Paci
 | **Opérations** | dépenses, revenus, virements entre comptes ; montant en devise converti ; recherche et filtres (mois, compte, catégorie, étiquette, membre) |
 | **Comptes** | Banque de Tahiti, Socredo, Banque de Polynésie, American Express, Deblock, espèces ; soldes calculés |
 | **Prêts** | crédit immo/auto/conso : mensualité, tableau d'amortissement, capital restant dû, intérêts payés et coût total, assurance emprunteur, remboursements anticipés, échéances à enregistrer, patrimoine net |
+| **Prévisionnel** | solde prévu mois par mois (3/6/12 mois) : soldes actuels + entrées/sorties prévues (salaires, pension, impôts, rentrée…) + abonnements + prêts + voyages − dépenses courantes ; point bas et alerte de passage sous zéro ; récurrences détectées dans les opérations |
+| **Voyages** | budget par poste (billets, hébergement… en XPF ou devise), compte à rebours, épargne mise de côté (ex. Deblock) et montant à épargner par mois, dépenses rattachées |
+| **Archives** | seules les 2 dernières années sont affichées (réglable) ; l'historique plus ancien reste consultable et compte dans les soldes |
 | **Budgets** | plafond mensuel par catégorie, alerte de dépassement et de rythme |
 | **Rapports** | évolution mensuelle, dépenses/revenus par catégorie, par personne, taux d'épargne |
 | **Import de relevés** | CSV (séparateur, encodage et colonnes détectés, mapping mémorisé par compte) et OFX ; doublons ignorés ; catégorisation automatique |

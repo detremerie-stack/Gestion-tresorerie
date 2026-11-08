@@ -126,3 +126,51 @@ function niceMax(v: number): number {
   for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p
   return 10 * p
 }
+
+/** Solde de fin de mois prévu : une série, barres ancrées sur zéro ; les mois négatifs sont signalés par le texte. */
+export function BalanceBars({ data }: { data: { month: string; value: number }[] }) {
+  const [hover, setHover] = useState<number | null>(null)
+  const W = 340
+  const H = 170
+  const padB = 22
+  const max = Math.max(0, ...data.map((d) => d.value))
+  const min = Math.min(0, ...data.map((d) => d.value))
+  const span = niceMax(Math.max(1, max - min))
+  const top = max > 0 ? niceMax(max) : 0
+  const scale = (H - padB - 18) / (top - min || span)
+  const y = (v: number) => 10 + (top - v) * scale
+  const slot = W / data.length
+  const barW = Math.min(22, slot - 8)
+  const h = hover != null ? data[hover] : null
+  return (
+    <div className="colchart">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Solde prévu en fin de mois" onMouseLeave={() => setHover(null)}>
+        <g className="grid"><line x1={0} x2={W} y1={y(0)} y2={y(0)} /></g>
+        {data.map((d, i) => {
+          const cx = slot * i + slot / 2
+          const y0 = y(0)
+          const y1 = y(d.value)
+          return (
+            <g key={d.month} onMouseEnter={() => setHover(i)} onClick={() => setHover(hover === i ? null : i)}>
+              <rect x={cx - slot / 2} y={0} width={slot} height={H} fill={hover === i ? 'var(--surface-2)' : 'transparent'} rx={6} />
+              {d.value >= 0
+                ? <Bar x={cx - barW / 2} w={barW} y0={y0} y1={y1} fill="var(--chart-income)" />
+                : <rect x={cx - barW / 2} y={y0} width={barW} height={Math.max(0, y1 - y0)} fill="var(--chart-expense)" rx={3} />}
+              <g className="axis"><text x={cx} y={H - 6} textAnchor="middle">{monthLabel(d.month, true).split(' ')[0]}</text></g>
+            </g>
+          )
+        })}
+      </svg>
+      {h && hover != null && (
+        <div className="tip" style={{ left: `${((slot * hover + slot / 2) / W) * 100}%`, top: 16 }}>
+          <strong style={{ textTransform: 'capitalize' }}>Fin {monthLabel(h.month)}</strong>
+          <div>{formatMoney(h.value)}{h.value < 0 ? ' · négatif' : ''}</div>
+        </div>
+      )}
+      <table className="sr-only">
+        <caption>Solde prévu en fin de mois</caption>
+        <tbody>{data.map((d) => <tr key={d.month}><td>{monthLabel(d.month)}</td><td>{formatMoney(d.value)}</td></tr>)}</tbody>
+      </table>
+    </div>
+  )
+}

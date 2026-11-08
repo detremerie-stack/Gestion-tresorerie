@@ -1,13 +1,15 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertCircle, CalendarClock, Check, TrendingDown, TrendingUp } from 'lucide-react'
+import { AlertCircle, CalendarClock, Check, LineChart, Plane, TrendingDown, TrendingUp } from 'lucide-react'
 import { useList, useMap, useStore } from '../data/store'
 import { useAccounts, useBalances } from '../data/hooks'
+import { useForecast } from '../data/useForecast'
+import { useTripStatuses } from './Trips'
 import { addInterval, daysBetween, formatShortDate, monthKey, monthLabel, today } from '../lib/dates'
 import { byCategory, totals } from '../lib/reports'
 import { dueForPayment, isExact, paymentXPF, upcomingPayments } from '../lib/subscriptions'
 import { dueInstallments, installmentsBetween, loanStatus } from '../lib/loans'
-import { effectiveFee, isFixedRate, toXPF } from '../lib/money'
+import { effectiveFee, formatMoney, isFixedRate, toXPF } from '../lib/money'
 import { Money } from '../ui/Money'
 import { Page, Section } from '../ui/Page'
 import { Meter, RankedBars } from '../ui/Charts'
@@ -32,6 +34,8 @@ export default function Dashboard() {
   const balances = useBalances()
   const t = today()
   const month = monthKey(t)
+  const fc = useForecast(3)
+  const nextTrip = useTripStatuses().find((r) => r.st.phase !== 'après')
 
   const monthTxs = useMemo(() => txs.filter((x) => monthKey(x.date) === month), [txs, month])
   const tot = useMemo(() => totals(monthTxs, accountsMap, rates), [monthTxs, accountsMap, rates])
@@ -99,6 +103,23 @@ export default function Dashboard() {
             <Money className="value" value={tot.expense} />
           </div>
         </div>
+      </div>
+
+      <div className="grid-2">
+        <Link to="/previsionnel" className="card stack" style={{ color: 'inherit', gap: 4 }}>
+          <span className="faint" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><LineChart size={16} />Prévu fin {monthLabel(fc.rows[1].month).split(' ')[0]}</span>
+          <Money className={`num ${fc.rows[1].endBalance < 0 ? 'expense' : ''}`} value={fc.rows[1].endBalance} approx />
+          {fc.rows.some((r) => r.endBalance < 0) && <span className="badge warn">Passage sous zéro</span>}
+        </Link>
+        <Link to={nextTrip ? `/voyages/${nextTrip.trip.id}` : '/voyages/nouveau'} className="card stack" style={{ color: 'inherit', gap: 4 }}>
+          <span className="faint" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><Plane size={16} />{nextTrip ? nextTrip.trip.name : 'Voyage'}</span>
+          {nextTrip ? (
+            <>
+              <strong className="num">{nextTrip.st.phase === 'pendant' ? 'En cours' : `J−${nextTrip.st.daysToGo}`}</strong>
+              <span className="faint">{nextTrip.st.toSave > 0 ? `${formatMoney(nextTrip.st.perMonth)}/mois à épargner` : 'Budget couvert ✓'}</span>
+            </>
+          ) : <span className="muted">Préparer un voyage</span>}
+        </Link>
       </div>
 
       {due.length > 0 && (

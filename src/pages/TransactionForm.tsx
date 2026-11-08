@@ -31,6 +31,7 @@ export default function TransactionForm() {
   const rules = useList('rules')
   const allTx = useList('transactions')
   const tags = useAllTags()
+  const trips = useList('trips')
 
   const [type, setType] = useState<TxType>(existing?.type ?? ((params.get('type') as TxType) || 'expense'))
   const [accountId, setAccountId] = useState(existing?.accountId ?? accounts[0]?.id ?? '')
@@ -49,6 +50,8 @@ export default function TransactionForm() {
   const [toAccountId, setToAccountId] = useState(existing?.toAccountId ?? accounts.find((a) => a.id !== accountId)?.id ?? '')
   const toAccount = accounts.find((a) => a.id === toAccountId)
   const [toAmount, setToAmount] = useState(existing?.toAmount != null ? fmtInput(existing.toAmount, toAccount?.currency ?? 'XPF') : '')
+  const [tripId, setTripId] = useState(existing?.tripId ?? params.get('voyage') ?? '')
+  const trip = trips.find((x) => x.id === tripId)
   const [error, setError] = useState<string>()
 
   const foreign = !!account && currency !== account.currency
@@ -96,6 +99,7 @@ export default function TransactionForm() {
       member,
       toAccountId: type === 'transfer' ? toAccountId : undefined,
       toAmount: type === 'transfer' ? (transferForeign ? parseAmount(toAmount) || suggestedTo : undefined) : undefined,
+      tripId: type === 'expense' && tripId ? tripId : undefined,
     }
     upsert('transactions', rec)
     toast(existing ? 'Opération modifiée' : 'Opération ajoutée')
@@ -157,6 +161,26 @@ export default function TransactionForm() {
               <CategoryPicker categories={categories} kind={type} value={categoryId} onChange={(c) => { setCategoryId(c); setCatTouched(true) }} />
             </div>
           </>
+        )}
+
+        {type === 'expense' && trips.length > 0 && (
+          <div className="field">
+            <label htmlFor="trip">Voyage</label>
+            <select id="trip" className="input" value={tripId} onChange={(e) => setTripId(e.target.value)}>
+              <option value="">Aucun</option>
+              {[...trips].sort((a, b) => b.startDate.localeCompare(a.startDate)).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+            </select>
+            {trip && trip.budgetLines.length > 0 && (
+              <div className="chips" style={{ flexWrap: 'wrap' }} role="group" aria-label="Poste du budget">
+                {trip.budgetLines.map((l) => (
+                  <button key={l.id} type="button" className="chip" aria-pressed={txTags.includes(l.label)}
+                    onClick={() => setTags(txTags.includes(l.label) ? txTags.filter((x) => x !== l.label) : [...txTags.filter((x) => !trip.budgetLines.some((b) => b.label === x)), l.label])}>
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         <div className="field">

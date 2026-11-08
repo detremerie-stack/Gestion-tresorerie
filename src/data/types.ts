@@ -61,6 +61,8 @@ export interface Transaction extends Base {
   member?: MemberId
   subscriptionId?: string
   loanId?: string
+  plannedId?: string
+  tripId?: string
   importHash?: string
   /** Libellé brut du relevé importé. */
   rawLabel?: string
@@ -118,6 +120,43 @@ export interface Loan extends Base {
   lastPaidDate?: ISODate
 }
 
+/** Entrée ou sortie prévue (salaire, pension, impôt, assurance annuelle, rentrée scolaire…). */
+export interface Planned extends Base {
+  name: string
+  kind: 'income' | 'expense'
+  amount: number
+  currency: Currency
+  /** 'once' = une seule fois à startDate. */
+  unit: IntervalUnit | 'once'
+  every: number
+  startDate: ISODate
+  endDate?: ISODate
+  categoryId?: string
+  accountId?: string
+  member?: MemberId
+  notes?: string
+  active: boolean
+}
+
+export interface TripLine {
+  id: string
+  label: string
+  amount: number
+  currency: Currency
+}
+
+export interface Trip extends Base {
+  name: string
+  destination?: string
+  startDate: ISODate
+  endDate: ISODate
+  budgetLines: TripLine[]
+  /** Compte où l'argent du voyage est mis de côté (ex. Deblock). */
+  savingsAccountId?: string
+  color: string
+  notes?: string
+}
+
 export interface Budget extends Base {
   categoryId: string
   /** Plafond mensuel en XPF. */
@@ -159,6 +198,10 @@ export interface Settings {
   /** Identifiant du membre utilisant cet appareil. */
   currentMember?: MemberId
   subscriptionsView: 'month' | 'year'
+  /** Nombre d'années affichées (année en cours incluse) ; les plus anciennes passent en archives. */
+  visibleYears?: number
+  /** Dépenses courantes mensuelles retenues pour le prévisionnel (sinon : moyenne des 3 derniers mois). */
+  forecastVariable?: number
 }
 
 /** Collections synchronisées (une « kind » par collection). */
@@ -171,6 +214,8 @@ export interface Collections {
   rules: Rule
   members: Member
   loans: Loan
+  planned: Planned
+  trips: Trip
 }
 export type Kind = keyof Collections
-export const KINDS: Kind[] = ['accounts', 'categories', 'transactions', 'subscriptions', 'budgets', 'rules', 'members', 'loans']
+export const KINDS: Kind[] = ['accounts', 'categories', 'transactions', 'subscriptions', 'budgets', 'rules', 'members', 'loans', 'planned', 'trips']

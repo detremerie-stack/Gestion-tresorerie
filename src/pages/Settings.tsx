@@ -6,6 +6,7 @@ import { KINDS, type Kind } from '../data/types'
 import { CURRENCIES, EUR_XPF, parseAmount, type Currency } from '../lib/money'
 import { fetchRates } from '../lib/rates'
 import { formatDate, today } from '../lib/dates'
+import { archiveStart } from '../lib/forecast'
 import { Page, Section } from '../ui/Page'
 import { Segmented } from '../ui/Field'
 import { useToast } from '../ui/toast'
@@ -72,6 +73,17 @@ export default function Settings() {
             <span className="label">Thème</span>
             <Segmented label="Thème" value={settings.theme} onChange={(v) => setSettings({ theme: v })} options={[{ value: 'system', label: 'Auto' }, { value: 'light', label: 'Clair' }, { value: 'dark', label: 'Sombre' }]} />
           </div>
+        </div>
+      </Section>
+
+      <Section title="Historique affiché">
+        <div className="card form">
+          <Segmented label="Années affichées" value={String(settings.visibleYears ?? 2)} onChange={(v) => setSettings({ visibleYears: Number(v) })}
+            options={[{ value: '1', label: '1 an' }, { value: '2', label: '2 ans' }, { value: '3', label: '3 ans' }, { value: '5', label: '5 ans' }]} />
+          <span className="faint">
+            Les opérations avant le {formatDate(archiveStart(today(), settings.visibleYears ?? 2))} sont archivées : toujours comptées dans les soldes et consultables (Opérations › Archives),
+            mais masquées au quotidien. La fenêtre avance automatiquement chaque 1er janvier.
+          </span>
         </div>
       </Section>
 

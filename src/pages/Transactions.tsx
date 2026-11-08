@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, ListX, Search, Upload } from 'lucide-react'
+import { Archive, ChevronLeft, ChevronRight, ListX, Search, Upload } from 'lucide-react'
 import { useMap, useStore } from '../data/store'
 import { COMMON, useAccounts, useMemberName, useMembers, useTransactions } from '../data/hooks'
-import { addMonths, formatLongDate, monthKey, monthLabel, today } from '../lib/dates'
+import { addMonths, formatDate, formatLongDate, monthKey, monthLabel, today } from '../lib/dates'
+import { archiveStart } from '../lib/forecast'
 import { normalize } from '../lib/id'
 import { signedXPF, totals } from '../lib/reports'
 import type { Transaction, TxType } from '../data/types'
@@ -21,6 +22,9 @@ export default function Transactions() {
   const members = useMembers()
   const memberName = useMemberName()
   const [q, setQ] = useState('')
+  const visibleYears = useStore((s) => s.settings.visibleYears ?? 2)
+  const archiveFrom = archiveStart(today(), visibleYears)
+  const archives = params.get('archives') === '1'
 
   const month = params.get('mois') ?? monthKey(today())
   const type = (params.get('type') ?? 'all') as TxType | 'all'
@@ -39,6 +43,7 @@ export default function Transactions() {
     const nq = normalize(q)
     return all.filter((t) => {
       if (!q && monthKey(t.date) !== month) return false
+      if (!archives && t.date < archiveFrom) return false
       if (type !== 'all' && t.type !== type) return false
       if (accountId && t.accountId !== accountId && t.toAccountId !== accountId) return false
       if (catId && (catId === 'none' ? !!t.categoryId : t.categoryId !== catId)) return false
@@ -50,7 +55,7 @@ export default function Transactions() {
       }
       return true
     })
-  }, [all, q, month, type, accountId, catId, member, tag, cats])
+  }, [all, q, month, type, accountId, catId, member, tag, cats, archives, archiveFrom])
 
   const groups = useMemo(() => {
     const m = new Map<string, Transaction[]>()
@@ -70,7 +75,7 @@ export default function Transactions() {
         </div>
         {!q && (
           <div className="month-nav">
-            <button className="icon-btn" aria-label="Mois précédent" onClick={() => setParam('mois', addMonths(month, -1))}><ChevronLeft /></button>
+            <button className="icon-btn" aria-label="Mois précédent" disabled={!archives && addMonths(month, -1) < archiveFrom.slice(0, 7)} onClick={() => setParam('mois', addMonths(month, -1))}><ChevronLeft /></button>
             <strong>{monthLabel(month)}</strong>
             <button className="icon-btn" aria-label="Mois suivant" onClick={() => setParam('mois', addMonths(month, 1))}><ChevronRight /></button>
           </div>
@@ -91,6 +96,13 @@ export default function Transactions() {
             <option value={COMMON}>Commun</option>
           </select>
         </div>
+        {archives ? (
+          <div className="callout"><Archive size={18} /><span style={{ flex: 1 }}>Consultation des archives (avant le {formatDate(archiveFrom)}).</span><button className="btn sm" onClick={() => setParam('archives', '')}>Quitter</button></div>
+        ) : all.some((t) => t.date < archiveFrom) && (
+          <button className="chip" style={{ alignSelf: 'flex-start' }} onClick={() => { const n = new URLSearchParams(params); n.set('archives', '1'); n.set('mois', addMonths(archiveFrom.slice(0, 7), -1)); setParams(n, { replace: true }) }}>
+            <Archive size={14} />Archives avant {archiveFrom.slice(0, 4)}
+          </button>
+        )}
         {(activeCat || catId === 'none' || tag) && (
           <div className="chips">
             {catId && <button className="chip" aria-pressed="true" onClick={() => setParam('cat', '')}>{activeCat?.name ?? 'Sans catégorie'} ✕</button>}
