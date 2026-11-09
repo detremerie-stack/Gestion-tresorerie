@@ -11,6 +11,7 @@ import { ocrImage, saveAttachment } from '../lib/attachments'
 import { parseReceipt } from '../lib/receipt'
 import type { AttachmentMeta } from '../data/types'
 import { AttachmentThumb } from '../ui/Attachments'
+import { CategoryEditor } from '../ui/CategoryEditor'
 import { parsePaymentText } from '../lib/quick'
 import { cleanLabel, matchRule } from '../lib/rules'
 import { CatIcon } from '../ui/Icon'
@@ -115,6 +116,7 @@ export default function QuickExpense() {
   const [member, setMember] = useState(cardOwner ?? me ?? COMMON)
   const [date, setDate] = useState(today())
   const [showAll, setShowAll] = useState(false)
+  const [creatingCat, setCreatingCat] = useState(false)
 
   const value = parseAmount(digits || '0')
   const account = accountsMap.get(accountId)
@@ -188,6 +190,7 @@ export default function QuickExpense() {
         </div>
       )}
 
+      {creatingCat && <CategoryEditor kind="expense" onDone={(c) => { setCreatingCat(false); setCategoryId(c.id) }} onCancel={() => setCreatingCat(false)} />}
       <div className="quick-cats" role="group" aria-label="Catégorie">
         {cats.map((c) => (
           <button key={c.id} type="button" aria-pressed={categoryId === c.id} onClick={() => setCategoryId(c.id)}>
@@ -195,6 +198,7 @@ export default function QuickExpense() {
           </button>
         ))}
         {!showAll && <button type="button" onClick={() => setShowAll(true)}><span className="cat-icon sm" style={{ background: 'var(--surface-2)', color: 'var(--text-2)' }}>…</span><span>Autres</span></button>}
+        {showAll && <button type="button" onClick={() => setCreatingCat(true)}><span className="cat-icon sm" style={{ background: 'var(--primary-soft)', color: 'var(--primary)' }}>+</span><span>Nouvelle</span></button>}
       </div>
 
       <div className="chips" role="group" aria-label="Payé avec">
