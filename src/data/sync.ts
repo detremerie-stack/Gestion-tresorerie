@@ -56,19 +56,25 @@ export function firebaseOptions(): FirebaseOptions | null {
 export const isConfigured = () => !!firebaseOptions()
 export const isBuiltIn = () => !!import.meta.env.VITE_FIREBASE_CONFIG
 
+let fbPromise: Promise<FB> | null = null
+
 export async function getFb(): Promise<FB | null> {
   const opts = firebaseOptions()
   if (!opts) return null
   const key = JSON.stringify(opts)
-  if (fb && key === fbKey) return fb
-  const [{ initializeApp, getApps, deleteApp }, authMod, mod] = await Promise.all([import('firebase/app'), import('firebase/auth'), import('firebase/firestore')])
-  for (const a of getApps()) await deleteApp(a)
-  const app = initializeApp(opts)
-  const auth = authMod.getAuth(app)
-  await authMod.setPersistence(auth, authMod.browserLocalPersistence)
-  fb = { app, auth, db: mod.getFirestore(app), mod, authMod }
+  // Une seule initialisation, même si plusieurs écrans la demandent en même temps.
+  if (fbPromise && key === fbKey) return fbPromise
   fbKey = key
-  return fb
+  fbPromise = (async () => {
+    const [{ initializeApp, getApps, deleteApp }, authMod, mod] = await Promise.all([import('firebase/app'), import('firebase/auth'), import('firebase/firestore')])
+    for (const a of getApps()) await deleteApp(a)
+    const app = initializeApp(opts)
+    const auth = authMod.getAuth(app)
+    await authMod.setPersistence(auth, authMod.browserLocalPersistence)
+    fb = { app, auth, db: mod.getFirestore(app), mod, authMod }
+    return fb
+  })()
+  return fbPromise
 }
 
 export async function currentUser(): Promise<User | null> {

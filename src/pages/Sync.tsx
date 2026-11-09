@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Cloud, CloudOff, Copy, LogOut, RefreshCw, Users } from 'lucide-react'
 import type { User } from 'firebase/auth'
 import { useStore } from '../data/store'
-import { findHousehold, isBuiltIn, isConfigured, linkHousehold, onSyncStatus, onUser, signInEmail, signInGoogle, signOut, startRealtime, syncNow, type SyncStatus } from '../data/sync'
+import { findHousehold, isBuiltIn, isConfigured, linkHousehold, onSyncStatus, onUser, signInGoogle, signOut, startRealtime, syncNow, type SyncStatus } from '../data/sync'
 import { Page, Section } from '../ui/Page'
 import { Segmented, TextField } from '../ui/Field'
 import { useToast } from '../ui/toast'
@@ -59,6 +59,7 @@ export default function SyncPage() {
         <Users size={18} />
         <span>Lionel et Véra partagent les mêmes données grâce à <strong>Firebase</strong> (Google). Une personne crée le foyer, l'autre le rejoint avec le code d'invitation. Sans synchronisation, l'app fonctionne seule sur ce téléphone.</span>
       </div>
+      <JoinGuide open={!user || !sync.householdId} code={sync.inviteCode} />
       {!configured ? <ConfigForm /> : !user ? <AuthForm run={run} busy={busy} err={err} /> : !sync.householdId ? <HouseholdForm run={run} busy={busy} err={err} /> : (
         <>
           <div className="card stack">
@@ -97,6 +98,23 @@ export default function SyncPage() {
   )
 }
 
+/** Mode opératoire pour rejoindre le foyer depuis un 2e téléphone (Véra). */
+function JoinGuide({ open, code }: { open: boolean; code?: string }) {
+  return (
+    <details className="card" open={open}>
+      <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Mode opératoire : rejoindre le foyer depuis un autre téléphone</summary>
+      <ol className="stack" style={{ margin: '12px 0 0', paddingLeft: 22, gap: 10 }}>
+        <li>Ouvrez l'adresse de l'app dans <strong>Chrome</strong> sur le téléphone, puis menu <strong>⋮ › Installer l'application</strong> (ou <em>Plus › Installer l'application</em>).</li>
+        <li>Au premier lancement, choisissez votre prénom puis <strong>« Commencer à vide »</strong> (ne pas reprendre les abonnements : ils sont déjà dans le foyer).</li>
+        <li>Allez dans <strong>Plus › Synchronisation</strong> et touchez <strong>« Continuer avec Google »</strong> ; choisissez votre propre compte Google.</li>
+        <li>Choisissez <strong>« Rejoindre »</strong> et tapez le code d'invitation{code ? <> : <strong className="num" style={{ letterSpacing: '0.1em' }}>{code}</strong></> : ' (visible sur le téléphone de la personne qui a créé le foyer, dans cette même page)'}, puis <strong>« Rejoindre »</strong>.</li>
+        <li>Patientez quelques secondes : comptes, opérations, prêt, abonnements et prévisions apparaissent. Ensuite, tout ce que l'un saisit apparaît chez l'autre.</li>
+      </ol>
+      <p className="faint" style={{ margin: '10px 0 0' }}>En cas de message d'erreur, faites une capture d'écran et envoyez-la à Lionel.</p>
+    </details>
+  )
+}
+
 function ConfigForm() {
   const setSync = useStore((s) => s.setSync)
   const [cfg, setCfg] = useState('')
@@ -112,22 +130,10 @@ function ConfigForm() {
 }
 
 function AuthForm({ run, busy, err }: { run: (fn: () => Promise<void>) => Promise<void>; busy: boolean; err?: string }) {
-  const [mode, setMode] = useState<'in' | 'up'>('in')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   return (
     <Section title="Connexion">
       <div className="card form">
         <button className="btn primary block" disabled={busy} onClick={() => void run(signInGoogle)}>Continuer avec Google</button>
-        <details>
-          <summary className="faint" style={{ cursor: 'pointer' }}>Ou avec un e-mail et un mot de passe</summary>
-          <form className="form" style={{ marginTop: 12 }} onSubmit={(e) => { e.preventDefault(); void run(() => signInEmail(email, password, mode === 'up')) }}>
-            <Segmented label="Mode" value={mode} onChange={setMode} options={[{ value: 'in', label: 'Se connecter' }, { value: 'up', label: 'Créer un compte' }]} />
-            <TextField label="E-mail" type="email" autoComplete="email" value={email} onChange={setEmail} required />
-            <TextField label="Mot de passe" type="password" autoComplete={mode === 'up' ? 'new-password' : 'current-password'} value={password} onChange={setPassword} required minLength={8} />
-            <button className="btn" disabled={busy}>{mode === 'up' ? 'Créer le compte' : 'Se connecter'}</button>
-          </form>
-        </details>
         {err && <p role="alert" style={{ color: 'var(--expense)', margin: 0 }}>{err}</p>}
       </div>
     </Section>
