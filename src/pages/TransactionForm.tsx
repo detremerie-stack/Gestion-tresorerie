@@ -11,6 +11,8 @@ import { Page } from '../ui/Page'
 import { Field, Segmented, SelectField, TextField } from '../ui/Field'
 import { CategoryPicker } from '../ui/CategoryPicker'
 import { TagInput } from '../ui/TagInput'
+import { Attachments } from '../ui/Attachments'
+import type { AttachmentMeta } from '../data/types'
 import { useToast } from '../ui/toast'
 
 const fmtInput = (n: number | undefined, cur: Currency) => (n == null || Number.isNaN(n) ? '' : String(roundTo(n, cur)).replace('.', ','))
@@ -53,6 +55,7 @@ export default function TransactionForm() {
   const [tripId, setTripId] = useState(existing?.tripId ?? params.get('voyage') ?? '')
   const trip = trips.find((x) => x.id === tripId)
   const [error, setError] = useState<string>()
+  const [attachments, setAttachments] = useState<AttachmentMeta[]>(existing?.attachments ?? [])
 
   const foreign = !!account && currency !== account.currency
   const fee = account ? effectiveFee(currency, account.currency, account.fxFeePct) : 0
@@ -100,6 +103,7 @@ export default function TransactionForm() {
       toAccountId: type === 'transfer' ? toAccountId : undefined,
       toAmount: type === 'transfer' ? (transferForeign ? parseAmount(toAmount) || suggestedTo : undefined) : undefined,
       tripId: type === 'expense' && tripId ? tripId : undefined,
+      attachments: attachments.length ? attachments : undefined,
     }
     upsert('transactions', rec)
     toast(existing ? 'Opération modifiée' : 'Opération ajoutée')
@@ -189,6 +193,8 @@ export default function TransactionForm() {
         </div>
         <TagInput label="Étiquettes" value={txTags} onChange={setTags} suggestions={tags} />
         <TextField label="Note" value={note} onChange={setNote} placeholder="Facultatif" />
+        <Attachments value={attachments} onChange={setAttachments} />
+        {existing?.reconciledAt && <p className="faint" style={{ margin: 0 }}>✓ Rapprochée avec le relevé bancaire{existing.rawLabel ? ` (« ${existing.rawLabel} »)` : ''}.</p>}
         {existing?.rawLabel && <p className="faint" style={{ margin: 0 }}>Libellé du relevé : {existing.rawLabel} {existing.rawLabel !== payee && <button type="button" className="btn sm" onClick={() => onPayee(cleanLabel(existing.rawLabel!))}>Utiliser</button>}</p>}
 
         <div className="sticky-actions">

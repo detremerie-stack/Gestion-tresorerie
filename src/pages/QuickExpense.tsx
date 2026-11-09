@@ -1,11 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Delete, HelpCircle, X } from 'lucide-react'
+import { Camera, Delete, HelpCircle, Plane, X } from 'lucide-react'
 import { useList, useMap, useStore } from '../data/store'
 import { COMMON, useAccounts, useCategories, useMembers } from '../data/hooks'
 import { addInterval, today } from '../lib/dates'
 import { normalize } from '../lib/id'
-import { formatMoney, fromXPF, parseAmount, toXPF, type Currency } from '../lib/money'
+import { effectiveFee, formatMoney, fromXPF, isFixedRate, parseAmount, rateOf, toXPF, type Currency } from '../lib/money'
+import { fetchRates } from '../lib/rates'
+import { ocrImage, saveAttachment } from '../lib/attachments'
+import { parseReceipt } from '../lib/receipt'
+import type { AttachmentMeta } from '../data/types'
+import { AttachmentThumb } from '../ui/Attachments'
 import { parsePaymentText } from '../lib/quick'
 import { cleanLabel, matchRule } from '../lib/rules'
 import { CatIcon } from '../ui/Icon'
@@ -21,6 +26,9 @@ export default function QuickExpense() {
   const upsert = useStore((s) => s.upsert)
   const remove = useStore((s) => s.remove)
   const rates = useStore((s) => s.settings.rates)
+  const ratesUpdatedAt = useStore((s) => s.settings.ratesUpdatedAt)
+  const setSettings = useStore((s) => s.setSettings)
+  const trips = useList('trips')
   const me = useStore((s) => s.settings.currentMember)
   const toast = useToast((s) => s.show)
   const accounts = useAccounts()
@@ -42,6 +50,9 @@ export default function QuickExpense() {
     }
   }, [params])
 
+  const t0 = today()
+  const trip = trips.find((x) => x.startDate <= t0 && t0 <= x.endDate)
+  const [tripMode, setTripMode] = useState(!!trip)
   const cardAccount = fromUrl.last4 ? accounts.find((a) => a.cardLast4?.includes(fromUrl.last4!)) : undefined
   const cardOwner = fromUrl.last4 && cardAccount ? cardAccount.cardOwners?.[fromUrl.last4] : undefined
 
@@ -67,14 +78,40 @@ export default function QuickExpense() {
 
   const lastAccount = txs.filter((t) => t.type === 'expense' && t.createdBy === me && !t.importHash).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]?.accountId
   const [digits, setDigits] = useState(fromUrl.amount ? String(fromUrl.amount).replace('.', ',') : '')
-  const [currency, setCurrency] = useState<Currency>(fromUrl.currency ?? 'XPF')
+  const [currency, setCurrency] = useState<Currency>(fromUrl.currency ?? (trip?.currency && tripMode ? trip.currency : 'XPF'))
   const [payee, setPayee] = useState(fromUrl.merchant ? cleanLabel(fromUrl.merchant) : '')
   const guess = (name: string) => {
     const known = frequent.find((f) => normalize(f.payee) === normalize(name))
     return known?.categoryId ?? matchRule(name, rules)?.categoryId
   }
   const [categoryId, setCategoryId] = useState<string | undefined>(() => (fromUrl.merchant ? guess(fromUrl.merchant) : undefined))
-  const [accountId, setAccountId] = useState(cardAccount?.id ?? lastAccount ?? accounts[0]?.id ?? '')
+  const [accountId, setAccountId] = useState(cardAccount?.id ?? (trip && tripMode ? trip.cardAccountId : undefined) ?? lastAccount ?? accounts[0]?.id ?? '')
+  const [attachments, setAttachments] = useState<AttachmentMeta[]>([])
+  const [scan, setScan] = useState<string>()
+  const camRef = useRef<HTMLInputElement>(null)
+
+  // Taux du jour (BCE) : rafraîchi à l'ouverture s'il date de plus de 12 h.
+  useEffect(() => {
+    if (ratesUpdatedAt && Date.now() - Date.parse(ratesUpdatedAt) < 12 * 3600 * 1000) return
+    fetchRates().then((r) => setSettings({ rates: { ...useStore.getState().settings.rates, ...r }, ratesUpdatedAt: new Date().toISOString() })).catch(() => {})
+  }, [ratesUpdatedAt, setSettings])
+
+  const onTicket = async (file?: File) => {
+    if (!file) return
+    setScan('Lecture du ticket… 0 %')
+    try {
+      const meta = await saveAttachment(file)
+      setAttachments((a) => [...a, meta])
+      const text = await ocrImage(file, (p) => setScan(`Lecture du ticket… ${Math.round(p * 100)} %`))
+      const r = parseReceipt(text, currency)
+      if (r.amount) { setDigits(String(r.amount).replace('.', ',')); if (r.currency) setCurrency(r.currency) }
+      if (r.merchant) { setPayee(cleanLabel(r.merchant)); const g = guess(r.merchant); if (g) setCategoryId(g) }
+      if (r.date && r.date <= today()) setDate(r.date)
+      setScan(r.amount ? 'Ticket lu : vérifiez le montant.' : 'Montant non trouvé : saisissez-le, le ticket est joint.')
+    } catch {
+      setScan('Lecture impossible (connexion nécessaire la 1re fois). Le ticket est joint, saisissez le montant.')
+    }
+  }
   const [member, setMember] = useState(cardOwner ?? me ?? COMMON)
   const [date, setDate] = useState(today())
   const [showAll, setShowAll] = useState(false)
@@ -96,10 +133,12 @@ export default function QuickExpense() {
   const save = () => {
     if (!(value > 0) || !account) return
     const foreign = currency !== account.currency
-    const amount = foreign ? fromXPF(toXPF(value, currency, rates), account.currency, rates) : value
+    const fee = effectiveFee(currency, account.currency, account.fxFeePct)
+    const amount = foreign ? fromXPF(toXPF(value, currency, rates) * (1 + fee / 100), account.currency, rates) : value
     const tx = upsert('transactions', {
       date, type: 'expense', amount, accountId, categoryId: categoryId ?? (payee ? guess(payee) : undefined), payee: payee.trim() || undefined,
-      tags: [], member, ...(foreign ? { originalAmount: value, originalCurrency: currency } : {}),
+      tags: [], member, ...(foreign ? { originalAmount: value, originalCurrency: currency, rateUsed: rateOf(currency, rates) } : {}),
+      ...(tripMode && trip ? { tripId: trip.id } : {}), ...(attachments.length ? { attachments } : {}),
     })
     toast(`${formatMoney(value, currency)} enregistré`, { label: 'Annuler', run: () => remove('transactions', tx.id) })
     nav('/', { replace: true })
@@ -114,6 +153,11 @@ export default function QuickExpense() {
         <Link to="/parametres/wallet" className="icon-btn" aria-label="Paiements Wallet automatiques"><HelpCircle size={20} /></Link>
       </header>
 
+      {trip && (
+        <button type="button" className={`chip ${tripMode ? '' : ''}`} aria-pressed={tripMode} onClick={() => setTripMode(!tripMode)} style={{ alignSelf: 'flex-start' }}>
+          <Plane size={14} />Mode voyage · {trip.name}{tripMode ? ' ✓' : ''}
+        </button>
+      )}
       <div className="quick-amount" aria-live="polite">
         <span className="num">{digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : '0'}</span>
         <div className="seg" role="group" aria-label="Devise">
@@ -124,6 +168,19 @@ export default function QuickExpense() {
       </div>
       {fromUrl.amount && <p className="faint" style={{ margin: 0 }}>Pré-rempli depuis la notification de paiement{cardAccount ? ` · carte ${fromUrl.last4} → ${cardAccount.name}` : ''}</p>}
 
+      {currency !== 'XPF' && value > 0 && account && (
+        <p className="faint" style={{ margin: 0 }}>
+          ≈ {formatMoney(toXPF(value, currency, rates) * (1 + effectiveFee(currency, account.currency, account.fxFeePct) / 100))}
+          {isFixedRate(currency) ? ' (parité fixe)' : ` · 1 ${currency} = ${String(rateOf(currency, rates)).replace('.', ',')} F`}
+          {effectiveFee(currency, account.currency, account.fxFeePct) ? ` + ${String(effectiveFee(currency, account.currency, account.fxFeePct)).replace('.', ',')} % de frais` : ''}
+        </p>
+      )}
+      <div className="split" style={{ gap: 8 }}>
+        <button type="button" className="btn sm scan-btn" onClick={() => camRef.current?.click()}><Camera size={16} />Scanner un ticket</button>
+        {attachments.map((m) => <AttachmentThumb key={m.id} meta={m} />)}
+        <input ref={camRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => void onTicket(e.target.files?.[0])} />
+      </div>
+      {scan && <p className="faint" role="status" style={{ margin: 0 }}>{scan}</p>}
       <input className="input" value={payee} onChange={(e) => { setPayee(e.target.value); const g = guess(e.target.value); if (g) setCategoryId(g) }} placeholder="Où ? (commerçant, facultatif)" aria-label="Commerçant" />
       {frequent.length > 0 && !payee && (
         <div className="chips" aria-label="Commerçants habituels">

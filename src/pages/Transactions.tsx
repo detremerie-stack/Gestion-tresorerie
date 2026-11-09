@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Archive, ChevronLeft, ChevronRight, ListX, Search, Upload } from 'lucide-react'
+import { Archive, ChevronLeft, ChevronRight, ListX, Paperclip, Search, Upload } from 'lucide-react'
 import { useMap, useStore } from '../data/store'
 import { COMMON, useAccounts, useMemberName, useMembers, useTransactions } from '../data/hooks'
-import { addMonths, formatDate, formatLongDate, monthKey, monthLabel, today } from '../lib/dates'
+import { addInterval, addMonths, formatDate, formatLongDate, monthKey, monthLabel, today } from '../lib/dates'
 import { archiveStart } from '../lib/forecast'
 import { normalize } from '../lib/id'
 import { signedXPF, totals } from '../lib/reports'
@@ -25,6 +25,7 @@ export default function Transactions() {
   const visibleYears = useStore((s) => s.settings.visibleYears ?? 2)
   const archiveFrom = archiveStart(today(), visibleYears)
   const archives = params.get('archives') === '1'
+  const recentLimit = addInterval(today(), -60, 'day')
 
   const month = params.get('mois') ?? monthKey(today())
   const type = (params.get('type') ?? 'all') as TxType | 'all'
@@ -153,6 +154,10 @@ export default function Transactions() {
                           <div className="end">
                             <Money className={`amount ${t.type === 'transfer' ? '' : t.type}`} value={t.type === 'transfer' ? t.amount : sign * t.amount} currency={acc?.currency} sign={t.type === 'income'} />
                             {t.originalCurrency && <span className="faint"><Money value={t.originalAmount ?? 0} currency={t.originalCurrency} /></span>}
+                            <span className="faint" style={{ display: 'flex', gap: 4 }}>
+                              {t.attachments?.length ? <Paperclip size={12} aria-label="Justificatif joint" /> : null}
+                              {!t.importHash && t.type !== 'transfer' && t.date >= recentLimit && accountsMap.get(t.accountId)?.type !== 'cash' && <span title="Saisie pas encore retrouvée sur un relevé">à rapprocher</span>}
+                            </span>
                           </div>
                         </Link>
                       </li>

@@ -33,6 +33,8 @@ export default function TripForm() {
   const [savingsAccountId, setSavings] = useState(existing?.savingsAccountId ?? deblock?.id ?? '')
   const [color, setColor] = useState(existing?.color ?? PALETTE[10])
   const [notes, setNotes] = useState(existing?.notes ?? '')
+  const [tripCurrency, setTripCurrency] = useState<Currency>(existing?.currency ?? 'EUR')
+  const [cardAccountId, setCardAccountId] = useState(existing?.cardAccountId ?? accounts.find((a) => a.institution === 'amex')?.id ?? '')
   const [lines, setLines] = useState<Draft[]>(existing?.budgetLines.map((l) => ({ ...l, amount: String(l.amount).replace('.', ',') })) ?? [])
   const [error, setError] = useState<string>()
 
@@ -43,7 +45,7 @@ export default function TripForm() {
     if (!name.trim()) return setError('Donnez un nom au voyage.')
     if (endDate < startDate) return setError('La date de retour est avant le départ.')
     const budgetLines: TripLine[] = lines.filter((l) => l.label.trim() && parseAmount(l.amount) > 0).map((l) => ({ id: l.id, label: l.label.trim(), amount: parseAmount(l.amount), currency: l.currency }))
-    const saved = upsert('trips', { ...(existing ?? {}), id: existing?.id, name: name.trim(), destination: destination.trim() || undefined, startDate, endDate, savingsAccountId: savingsAccountId || undefined, color, notes: notes.trim() || undefined, budgetLines })
+    const saved = upsert('trips', { ...(existing ?? {}), id: existing?.id, name: name.trim(), destination: destination.trim() || undefined, startDate, endDate, savingsAccountId: savingsAccountId || undefined, color, notes: notes.trim() || undefined, budgetLines, currency: tripCurrency, cardAccountId: cardAccountId || undefined })
     toast(existing ? 'Voyage modifié' : 'Voyage créé')
     nav(`/voyages/${saved.id}`, { replace: true })
   }
@@ -78,6 +80,11 @@ export default function TripForm() {
             <button type="button" className="chip" onClick={() => setLines([...lines, { id: uid(), label: '', amount: '', currency: 'XPF' }])}><Plus size={14} />Autre</button>
           </div>
         </div>
+        <div className="grid-2">
+          <SelectField label="Devise sur place" value={tripCurrency} onChange={setTripCurrency} options={CURRENCIES.map((c) => ({ value: c.code, label: c.code }))} />
+          <SelectField label="Carte utilisée" value={cardAccountId} onChange={setCardAccountId} options={[{ value: '', label: '—' }, ...accounts.map((a) => ({ value: a.id, label: a.name.replace(/\s*\(.*\)/, '') }))]} />
+        </div>
+        <p className="faint" style={{ margin: 0 }}>Pendant le voyage, « Dépense rapide » passe en mode voyage : devise sur place, carte, rattachement au voyage et conversion au taux du jour.</p>
         <SelectField label="Épargne mise de côté sur" value={savingsAccountId} onChange={setSavings}
           options={[{ value: '', label: 'Aucun compte dédié' }, ...accounts.map((a) => ({ value: a.id, label: `${a.name} (${a.currency})` }))]}
           hint="Le solde de ce compte est compté comme déjà épargné pour le voyage." />

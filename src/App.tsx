@@ -27,6 +27,7 @@ import LoanForm from './pages/LoanForm'
 import Forecast from './pages/Forecast'
 import QuickExpense from './pages/QuickExpense'
 import WalletHelp from './pages/WalletHelp'
+import Documents from './pages/Documents'
 import PlannedForm from './pages/PlannedForm'
 import Trips from './pages/Trips'
 import TripDetail from './pages/TripDetail'
@@ -146,6 +147,7 @@ export default function App() {
               <Route path="/prets/:id/modifier" element={<LoanForm />} />
               <Route path="/rapide" element={<QuickExpense />} />
               <Route path="/parametres/wallet" element={<WalletHelp />} />
+              <Route path="/documents" element={<Documents />} />
               <Route path="/previsionnel" element={<Forecast />} />
               <Route path="/previsionnel/nouveau" element={<PlannedForm />} />
               <Route path="/previsionnel/:id" element={<PlannedForm />} />

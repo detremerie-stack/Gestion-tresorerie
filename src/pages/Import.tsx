@@ -11,6 +11,7 @@ import { cleanLabel, foreignAmount, matchRule } from '../lib/rules'
 import { formatDate } from '../lib/dates'
 import { CURRENCIES, formatMoney, fromXPF, toXPF, type Currency } from '../lib/money'
 import { uid } from '../lib/id'
+import { findManualMatch } from '../lib/reconcile'
 import { Page, Section } from '../ui/Page'
 import { SelectField } from '../ui/Field'
 import { useToast } from '../ui/toast'
@@ -81,10 +82,17 @@ export default function Import() {
 
   const existingHashes = useMemo(() => new Set(existing.map((t) => t.importHash).filter(Boolean)), [existing])
   const hashes = useMemo(() => importHashes(accountId, parsed.rows), [accountId, parsed.rows])
-  const preview = parsed.rows.map((r, i) => {
-    const rule = matchRule(r.label, rules)
-    return { r, hash: hashes[i], dup: existingHashes.has(hashes[i]), rule }
-  })
+  // Rapprochement : une saisie manuelle (ou Wallet) correspondante est complétée au lieu d'être dupliquée.
+  const preview = (() => {
+    const used = new Set<string>()
+    return parsed.rows.map((r, i) => {
+      const rule = matchRule(r.label, rules)
+      const dup = existingHashes.has(hashes[i])
+      const match = dup ? undefined : findManualMatch(r, accountId, existing, used)
+      if (match) used.add(match.id)
+      return { r, hash: hashes[i], dup, rule, match }
+    })
+  })()
   const toImport = preview.filter((p) => !(skipDup && p.dup))
   const cats = useMap('categories')
 
@@ -97,7 +105,11 @@ export default function Import() {
 
   const doImport = () => {
     if (!account) return
-    const txs: Transaction[] = toImport.map(({ r, hash, rule }) => {
+    const matched = toImport.filter((p) => p.match)
+    for (const { r, hash, match } of matched) {
+      upsert('transactions', { ...match!, amount: Math.abs(r.amount), importHash: hash, rawLabel: r.label, reconciledAt: new Date().toISOString() })
+    }
+    const txs: Transaction[] = toImport.filter((p) => !p.match).map(({ r, hash, rule }) => {
       const target = r.amount < 0 ? internalTarget(r.label) : undefined
       const fx = foreignAmount(r.label)
       const fxOk = fx && fx.currency !== account.currency && CURRENCIES.some((c) => c.code === fx.currency)
@@ -126,7 +138,7 @@ export default function Import() {
     })
     upsertMany('transactions', txs)
     if (mapping) upsert('accounts', { ...account, importMapping: mapping })
-    toast(`${txs.length} opération${txs.length > 1 ? 's' : ''} importée${txs.length > 1 ? 's' : ''}`)
+    toast(`${txs.length} opération${txs.length > 1 ? 's' : ''} importée${txs.length > 1 ? 's' : ''}${matched.length ? ` · ${matched.length} rapprochée${matched.length > 1 ? 's' : ''} avec vos saisies` : ''}`)
     nav(`/operations?compte=${accountId}&mois=${txs[0]?.date.slice(0, 7) ?? ''}`)
   }
 
@@ -193,7 +205,7 @@ export default function Import() {
                     <td className="num">{formatDate(p.r.date).slice(0, 5)}</td>
                     <td>
                       {p.r.label}{p.dup && <span className="badge" style={{ marginLeft: 6 }}>déjà importée</span>}
-                      <div className="faint">{p.r.amount < 0 && internalTarget(p.r.label) ? `Virement → ${internalTarget(p.r.label)!.name}` : p.rule ? cats.get(p.rule.categoryId ?? '')?.name : 'Sans catégorie'}</div>
+                      <div className="faint">{p.match ? <span className="income">↔ Rapprochée avec « {p.match.payee ?? 'saisie'} » du {formatDate(p.match.date).slice(0, 5)}</span> : p.r.amount < 0 && internalTarget(p.r.label) ? `Virement → ${internalTarget(p.r.label)!.name}` : p.rule ? cats.get(p.rule.categoryId ?? '')?.name : 'Sans catégorie'}</div>
                     </td>
                     <td className={`r num ${p.r.amount < 0 ? 'expense' : 'income'}`}>{formatMoney(p.r.amount, account?.currency ?? 'XPF', { sign: true })}</td>
                   </tr>

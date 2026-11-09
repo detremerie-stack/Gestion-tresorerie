@@ -67,6 +67,12 @@ export interface Transaction extends Base {
   loanId?: string
   plannedId?: string
   tripId?: string
+  /** Justificatifs (photos de tickets, factures) stockés sur l'appareil. */
+  attachments?: AttachmentMeta[]
+  /** Saisie manuelle rapprochée avec une ligne de relevé importée. */
+  reconciledAt?: string
+  /** Taux utilisé à la saisie (XPF pour 1 unité de la devise d'origine). */
+  rateUsed?: number
   importHash?: string
   /** Libellé brut du relevé importé. */
   rawLabel?: string
@@ -142,6 +148,14 @@ export interface Planned extends Base {
   active: boolean
 }
 
+export interface AttachmentMeta {
+  id: string
+  name: string
+  type: string
+  size: number
+  createdAt: string
+}
+
 export interface TripLine {
   id: string
   label: string
@@ -157,6 +171,9 @@ export interface Trip extends Base {
   budgetLines: TripLine[]
   /** Compte où l'argent du voyage est mis de côté (ex. Deblock). */
   savingsAccountId?: string
+  /** Devise principale sur place et carte utilisée (mode voyage de la saisie rapide). */
+  currency?: Currency
+  cardAccountId?: string
   color: string
   notes?: string
 }
