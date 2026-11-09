@@ -49,7 +49,7 @@ export function Attachments({ value, onChange }: { value: AttachmentMeta[]; onCh
       </div>
       <input ref={cam} type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => void add(e.target.files)} />
       <input ref={file} type="file" accept="image/*,application/pdf" multiple className="sr-only" onChange={(e) => void add(e.target.files)} />
-      <span className="hint">Conservés sur ce téléphone (non synchronisés).</span>
+      <span className="hint">Partagés avec le foyer quand la synchronisation est active (sinon gardés sur ce téléphone).</span>
     </div>
   )
 }

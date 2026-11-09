@@ -48,7 +48,7 @@ export default function Documents() {
           </ul></div>
         </Section>
       ))}
-      <p className="faint" style={{ margin: 0 }}>Les justificatifs sont conservés sur ce téléphone. Pensez à exporter une sauvegarde de vos données ; les fichiers eux-mêmes restent sur l'appareil.</p>
+      <p className="faint" style={{ margin: 0 }}>Avec la synchronisation active, les justificatifs sont copiés dans l'espace privé du foyer (Supabase) et visibles sur les deux téléphones ; sinon ils restent sur ce téléphone.</p>
     </Page>
   )
 }

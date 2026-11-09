@@ -120,6 +120,8 @@ export async function syncNow(): Promise<void> {
   try {
     await push(c, householdId)
     await pull(c, householdId)
+    const { flushUploads } = await import('../lib/attachments')
+    await flushUploads().catch(() => {})
     setStatus({ state: 'idle', lastSyncAt: new Date().toISOString() })
   } catch (e) {
     setStatus({ ...status, state: 'error', message: e instanceof Error ? e.message : String(e) })

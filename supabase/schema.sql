@@ -97,3 +97,17 @@ grant execute on function public.join_household(text) to authenticated;
 do $$ begin
   alter publication supabase_realtime add table public.records;
 exception when duplicate_object then null; end $$;
+
+-- Justificatifs (photos de tickets, factures) : stockage privé, un dossier par foyer.
+insert into storage.buckets (id, name, public) values ('justificatifs', 'justificatifs', false)
+on conflict (id) do nothing;
+
+drop policy if exists "foyer lit ses justificatifs" on storage.objects;
+create policy "foyer lit ses justificatifs" on storage.objects for select to authenticated
+  using (bucket_id = 'justificatifs' and public.is_member(((storage.foldername(name))[1])::uuid));
+drop policy if exists "foyer ajoute ses justificatifs" on storage.objects;
+create policy "foyer ajoute ses justificatifs" on storage.objects for insert to authenticated
+  with check (bucket_id = 'justificatifs' and public.is_member(((storage.foldername(name))[1])::uuid));
+drop policy if exists "foyer supprime ses justificatifs" on storage.objects;
+create policy "foyer supprime ses justificatifs" on storage.objects for delete to authenticated
+  using (bucket_id = 'justificatifs' and public.is_member(((storage.foldername(name))[1])::uuid));
