@@ -23,7 +23,7 @@ d'un foyer en Polynésie française, à deux (Lionel et Véra), en **francs Paci
 | **Rapports** | évolution mensuelle, dépenses/revenus par catégorie, par personne, taux d'épargne |
 | **Import de relevés** | CSV (séparateur, encodage et colonnes détectés, mapping mémorisé par compte) et OFX ; doublons ignorés ; catégorisation automatique |
 | **Relevé imprimable** | par compte et période → impression / PDF, ou export CSV |
-| **Partage** | synchronisation temps réel entre téléphones via Supabase (facultatif) |
+| **Partage** | synchronisation temps réel entre téléphones via Firebase (connexion Google), justificatifs compris |
 
 ### Couche locale Polynésie
 - XPF **sans décimales** (`21 326 F`), dates JJ/MM/AAAA.
@@ -47,26 +47,28 @@ Le workflow `.github/workflows/deploy.yml` teste, construit et publie l'app à c
 Activez-le une fois : **Settings › Pages › Source : GitHub Actions**.
 Sur Android : ouvrez l'adresse dans Chrome › menu ⋮ › **Installer l'application**.
 
-## Partager entre Lionel et Véra (Supabase, gratuit)
+## Partager entre Lionel et Véra (Firebase)
 
-1. Créez un projet sur [supabase.com](https://supabase.com).
-2. **SQL Editor** : collez et exécutez `supabase/schema.sql`.
-3. **Project Settings › API** : copiez l'URL et la clé `anon` (publique).
-4. Dans l'app : **Plus › Synchronisation**, collez-les (ou définissez `VITE_SUPABASE_URL` /
-   `VITE_SUPABASE_ANON_KEY` au build), créez un compte et **créez le foyer**.
-5. Sur l'autre téléphone : même chose, puis **Rejoindre** avec le code d'invitation affiché.
+1. Console Firebase (même compte Google que vos autres projets) › **Ajouter un projet** `fare-moni`
+   (projet séparé : ses règles de sécurité n'interfèrent pas avec vos autres applications ; plan gratuit Spark, sans carte bancaire).
+2. **Authentication** › Commencer › activer **Google** (et éventuellement E-mail/mot de passe).
+   Onglet *Paramètres › Domaines autorisés* : ajouter `detremerie-stack.github.io`.
+3. **Firestore Database** › Créer (mode production, région proche) › onglet **Règles** : coller `firebase/firestore.rules` › Publier.
+4. **Paramètres du projet › Vos applications › Web (</>)** : enregistrer l'app, copier l'objet `firebaseConfig`
+   (valeurs publiques par conception ; la sécurité vient des règles Firestore).
+5. Dans l'app : **Plus › Synchronisation** (ou config intégrée au build via `VITE_FIREBASE_CONFIG`), se connecter avec Google,
+   **Créer le foyer** ; sur l'autre téléphone, **Rejoindre** avec le code d'invitation.
 
-Les données restent aussi sur chaque téléphone (hors ligne possible) ; la sécurité est assurée par
-les règles RLS : seuls les membres d'un foyer voient ses données.
+Les justificatifs (photos compressées ≤ 900 Ko) sont aussi partagés via Firestore.
 
 ## Architecture
 
 ```
 src/lib/        logique pure et testée (money, dates, subscriptions, reports, rules, import/)
-src/data/       types, valeurs par défaut, store (Zustand + IndexedDB), synchro Supabase
+src/data/       types, valeurs par défaut, store (Zustand + IndexedDB), synchro Firebase
 src/ui/         composants (Money, Charts, champs…)
 src/pages/      écrans
-supabase/       schéma SQL (table générique `records` en jsonb, RLS par foyer)
+firebase/       règles de sécurité Firestore (accès réservé aux membres du foyer)
 DESIGN.md       jetons de design (couleurs, typo, espacements)
 docs/superpowers/specs/  spécification
 ```

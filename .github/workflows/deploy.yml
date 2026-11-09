@@ -28,10 +28,8 @@ jobs:
       - run: npm test
       - run: npm run build
         env:
-          # Facultatif : renseignez ces variables (Settings › Secrets and variables › Actions › Variables)
-          # pour que l'app soit préconfigurée avec votre projet Supabase.
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          # Configuration Firebase publique de l'app web (préconfigure la synchro sur les téléphones).
+          VITE_FIREBASE_CONFIG: ${{ vars.VITE_FIREBASE_CONFIG }}
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:

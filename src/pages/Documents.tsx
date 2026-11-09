@@ -48,7 +48,7 @@ export default function Documents() {
           </ul></div>
         </Section>
       ))}
-      <p className="faint" style={{ margin: 0 }}>Avec la synchronisation active, les justificatifs sont copiés dans l'espace privé du foyer (Supabase) et visibles sur les deux téléphones ; sinon ils restent sur ce téléphone.</p>
+      <p className="faint" style={{ margin: 0 }}>Avec la synchronisation active, les justificatifs sont copiés dans l'espace privé du foyer (Firebase) et visibles sur les deux téléphones ; sinon ils restent sur ce téléphone.</p>
     </Page>
   )
 }

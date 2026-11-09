@@ -2,28 +2,18 @@ import { createStore, del, get, keys, set } from 'idb-keyval'
 import type { AttachmentMeta } from '../data/types'
 import { uid } from './id'
 
-// Fichiers sur l'appareil (IndexedDB) ; copiés dans Supabase Storage (dossier du foyer) quand la synchro est active.
+// Fichiers sur l'appareil (IndexedDB) ; copiés dans Firestore (foyer) quand la synchro est active.
 const store = createStore('fare-moni-docs', 'files')
 const pending = createStore('fare-moni-docs-pending', 'uploads')
-const BUCKET = 'justificatifs'
-
-async function remote() {
-  const { getClient } = await import('../data/sync')
-  const { useStore } = await import('../data/store')
-  const c = getClient()
-  const hid = useStore.getState().sync.householdId
-  return c && hid ? { c, hid } : null
-}
 
 /** Envoie les justificatifs en attente (appelé après chaque synchronisation). */
 export async function flushUploads(): Promise<void> {
-  const r = await remote()
-  if (!r) return
+  const { uploadFile } = await import('../data/sync')
   for (const id of (await keys(pending)) as string[]) {
     const blob = await get<Blob>(id, store)
     if (!blob) { await del(id, pending); continue }
-    const { error } = await r.c.storage.from(BUCKET).upload(`${r.hid}/${id}`, blob, { contentType: blob.type, upsert: true })
-    if (!error) await del(id, pending)
+    if (await uploadFile(id, blob, id)) await del(id, pending)
+    else if (blob.size > 900_000) await del(id, pending) // trop gros : reste sur ce téléphone
   }
 }
 
@@ -52,9 +42,9 @@ export async function attachmentUrl(id: string): Promise<string | undefined> {
   let blob = await get<Blob>(id, store)
   if (!blob) {
     // Justificatif ajouté sur l'autre téléphone : téléchargé puis gardé en cache.
-    const r = await remote().catch(() => null)
-    const dl = r ? await r.c.storage.from(BUCKET).download(`${r.hid}/${id}`) : null
-    if (dl?.data) { blob = dl.data; await set(id, blob, store) }
+    const { downloadFile } = await import('../data/sync')
+    const dl = await downloadFile(id).catch(() => null)
+    if (dl) { blob = dl; await set(id, blob, store) }
   }
   return blob ? URL.createObjectURL(blob) : undefined
 }
@@ -62,8 +52,8 @@ export async function attachmentUrl(id: string): Promise<string | undefined> {
 export async function deleteAttachment(id: string) {
   await del(id, store)
   await del(id, pending)
-  const r = await remote().catch(() => null)
-  if (r) await r.c.storage.from(BUCKET).remove([`${r.hid}/${id}`])
+  const { removeFile } = await import('../data/sync')
+  await removeFile(id)
 }
 
 /** OCR du ticket dans le navigateur (Tesseract, chargé à la demande ; nécessite le réseau la 1re fois). */

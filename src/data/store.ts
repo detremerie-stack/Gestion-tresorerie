@@ -12,8 +12,8 @@ import { DEFAULT_RATES, effectiveFee, formatMoney, fromXPF, toXPF } from '../lib
 type Maps = { [K in Kind]: Record<string, Collections[K]> }
 
 export interface SyncConfig {
-  url?: string
-  anonKey?: string
+  /** Configuration Firebase (JSON de l'app web), si elle n'est pas intégrée au build. */
+  firebaseConfig?: string
   householdId?: string
   householdName?: string
   inviteCode?: string
