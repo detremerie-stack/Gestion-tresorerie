@@ -27,6 +27,10 @@ export interface Account extends Base {
   color: string
   owner?: MemberId
   archived?: boolean
+  /** 4 derniers chiffres des cartes rattachées (reconnaissance des paiements Wallet). */
+  cardLast4?: string[]
+  /** Membre titulaire de chaque carte (clé = 4 derniers chiffres). */
+  cardOwners?: Record<string, MemberId>
   /** Mapping d'import mémorisé pour ce compte. */
   importMapping?: ImportMapping
 }

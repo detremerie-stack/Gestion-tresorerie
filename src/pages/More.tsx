@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { BarChart3, ChevronRight, Cloud, FileText, HandCoins, Landmark, LineChart, PiggyBank, Plane, Settings, Tags, Upload, Wand2 } from 'lucide-react'
+import { BarChart3, ChevronRight, Cloud, FileText, HandCoins, Landmark, LineChart, PiggyBank, Plane, Settings, Smartphone, Tags, Upload, Wand2 } from 'lucide-react'
 import { Page } from '../ui/Page'
 import { useStore } from '../data/store'
 import { InstallCard } from '../ui/install'
@@ -15,6 +15,7 @@ const ITEMS = [
   { to: '/releve', icon: FileText, label: 'Relevé imprimable', sub: 'Par compte et par période, en PDF' },
   { to: '/parametres/categories', icon: Tags, label: 'Catégories', sub: 'Dépenses et revenus' },
   { to: '/parametres/regles', icon: Wand2, label: 'Règles automatiques', sub: 'Catégoriser les relevés importés' },
+  { to: '/parametres/wallet', icon: Smartphone, label: 'Paiements Wallet', sub: 'Pré-remplir une dépense depuis la notification de paiement' },
   { to: '/parametres/synchro', icon: Cloud, label: 'Synchronisation', sub: 'Partager avec Véra / Lionel' },
   { to: '/parametres', icon: Settings, label: 'Paramètres', sub: 'Taux de change, thème, sauvegarde' },
 ]

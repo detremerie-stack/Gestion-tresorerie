@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { HashRouter, NavLink, Route, Routes, useLocation, Link } from 'react-router-dom'
-import { ArrowLeftRight, Home, List, MoreHorizontal, Plus, Repeat, TrendingDown, TrendingUp, X } from 'lucide-react'
+import { ArrowLeftRight, Home, List, MoreHorizontal, Plane, Plus, Repeat, TrendingDown, TrendingUp, X } from 'lucide-react'
 import { useStore } from './data/store'
 import { initSync } from './data/sync'
 import { Toaster } from './ui/toast'
@@ -25,6 +25,8 @@ import Loans from './pages/Loans'
 import LoanDetail from './pages/LoanDetail'
 import LoanForm from './pages/LoanForm'
 import Forecast from './pages/Forecast'
+import QuickExpense from './pages/QuickExpense'
+import WalletHelp from './pages/WalletHelp'
 import PlannedForm from './pages/PlannedForm'
 import Trips from './pages/Trips'
 import TripDetail from './pages/TripDetail'
@@ -40,10 +42,12 @@ function useTheme() {
 
 function QuickAdd({ onClose }: { onClose: () => void }) {
   const items = [
-    { to: '/operations/nouvelle?type=expense', icon: <TrendingDown size={22} className="expense" />, label: 'Dépense' },
+    { to: '/rapide', icon: <TrendingDown size={22} className="expense" />, label: 'Dépense rapide' },
     { to: '/operations/nouvelle?type=income', icon: <TrendingUp size={22} className="income" />, label: 'Revenu' },
     { to: '/operations/nouvelle?type=transfer', icon: <ArrowLeftRight size={22} />, label: 'Virement' },
     { to: '/abonnements/nouveau', icon: <Repeat size={22} />, label: 'Abonnement' },
+    { to: '/operations/nouvelle?type=expense', icon: <TrendingDown size={22} />, label: 'Dépense détaillée' },
+    { to: '/voyages/nouveau', icon: <Plane size={22} />, label: 'Voyage' },
   ]
   return (
     <div className="backdrop" onClick={onClose}>
@@ -68,6 +72,7 @@ function Nav() {
   useEffect(() => {
     setOpen(false)
   }, [loc.pathname])
+  if (loc.pathname === '/rapide') return null
   return (
     <>
       <nav className="nav no-print" aria-label="Navigation principale">
@@ -139,6 +144,8 @@ export default function App() {
               <Route path="/prets/nouveau" element={<LoanForm />} />
               <Route path="/prets/:id" element={<LoanDetail />} />
               <Route path="/prets/:id/modifier" element={<LoanForm />} />
+              <Route path="/rapide" element={<QuickExpense />} />
+              <Route path="/parametres/wallet" element={<WalletHelp />} />
               <Route path="/previsionnel" element={<Forecast />} />
               <Route path="/previsionnel/nouveau" element={<PlannedForm />} />
               <Route path="/previsionnel/:id" element={<PlannedForm />} />

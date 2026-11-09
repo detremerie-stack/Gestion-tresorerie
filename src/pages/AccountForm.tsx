@@ -40,6 +40,7 @@ export default function AccountForm() {
   const [color, setColor] = useState(existing?.color ?? PALETTE[0])
   const [owner, setOwner] = useState(existing?.owner ?? COMMON)
   const [error, setError] = useState<string>()
+  const [cards, setCards] = useState((existing?.cardLast4 ?? []).map((c) => `${c}${existing?.cardOwners?.[c] ? `:${existing.cardOwners[c]}` : ''}`))
 
   const pickInstitution = (v: Institution) => {
     setInstitution(v)
@@ -56,7 +57,8 @@ export default function AccountForm() {
     const f = parseAmount(fee || '0')
     if (!name.trim()) return setError('Donnez un nom au compte.')
     if (Number.isNaN(bal)) return setError('Solde initial illisible.')
-    upsert('accounts', { ...(existing ?? {}), id: existing?.id, name: name.trim(), institution, type, currency, initialBalance: bal, initialDate: initialDate || undefined, fxFeePct: Number.isNaN(f) ? 0 : f, color, owner })
+    const parsedCards = cards.map((c) => c.split(':')).filter(([d]) => /^\d{4}$/.test(d))
+    upsert('accounts', { ...(existing ?? {}), id: existing?.id, name: name.trim(), institution, type, currency, initialBalance: bal, initialDate: initialDate || undefined, fxFeePct: Number.isNaN(f) ? 0 : f, color, owner, cardLast4: parsedCards.map(([d]) => d), cardOwners: Object.fromEntries(parsedCards.filter(([, m]) => m).map(([d, m]) => [d, m])) })
     toast(existing ? 'Compte modifié' : 'Compte ajouté')
     nav(-1)
   }
@@ -90,6 +92,27 @@ export default function AccountForm() {
             {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             <option value={COMMON}>Compte commun</option>
           </select>
+        </div>
+        <div className="field">
+          <span className="label">Cartes (4 derniers chiffres)</span>
+          {[...cards, ''].map((c, i) => {
+            const [digits, who] = c.split(':')
+            const set = (d: string, w?: string) => {
+              const next = [...cards]
+              next[i] = w ? `${d}:${w}` : d
+              setCards(next.filter((x, j) => x !== '' || j < cards.length - 1 || j === i).filter(Boolean))
+            }
+            return (
+              <div key={i} className="input-group">
+                <input className="input" inputMode="numeric" maxLength={4} placeholder="ex. 5778" value={digits ?? ''} aria-label="4 derniers chiffres" onChange={(e) => set(e.target.value.replace(/\D/g, ''), who)} style={{ maxWidth: 120 }} />
+                <select className="input" value={who ?? ''} aria-label="Titulaire de la carte" onChange={(e) => set(digits ?? '', e.target.value || undefined)} style={{ flex: 1, width: '100%' }}>
+                  <option value="">Titulaire…</option>
+                  {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </div>
+            )
+          })}
+          <span className="hint">Sert à reconnaître la carte dans les notifications de paiement (Google Wallet).</span>
         </div>
         <div className="field"><span className="label">Couleur</span><Swatches value={color} onChange={setColor} colors={PALETTE} /></div>
         <div className="sticky-actions"><button className="btn primary" type="submit">Enregistrer</button></div>

@@ -16,6 +16,7 @@ d'un foyer en Polynésie française, à deux (Lionel et Véra), en **francs Paci
 | **Prévisionnel** | solde prévu mois par mois (3/6/12 mois) : soldes actuels + entrées/sorties prévues (salaires, pension, impôts, rentrée…) + abonnements + prêts + voyages − dépenses courantes ; point bas et alerte de passage sous zéro ; récurrences détectées dans les opérations |
 | **Voyages** | budget par poste (billets, hébergement… en XPF ou devise), compte à rebours, épargne mise de côté (ex. Deblock) et montant à épargner par mois, dépenses rattachées |
 | **Archives** | seules les 2 dernières années sont affichées (réglable) ; l'historique plus ancien reste consultable et compte dans les soldes |
+| **Dépense rapide** | pavé numérique, commerçants habituels en un geste, catégorie devinée ; raccourci « Dépense rapide » (appui long sur l'icône) ; pré-remplissage depuis une notification de paiement Google Wallet via MacroDroid (`#/rapide?titre=…&texte=…`), carte reconnue par ses 4 derniers chiffres |
 | **Budgets** | plafond mensuel par catégorie, alerte de dépassement et de rythme |
 | **Rapports** | évolution mensuelle, dépenses/revenus par catégorie, par personne, taux d'épargne |
 | **Import de relevés** | CSV (séparateur, encodage et colonnes détectés, mapping mémorisé par compte) et OFX ; doublons ignorés ; catégorisation automatique |

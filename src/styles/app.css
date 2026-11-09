@@ -242,3 +242,17 @@ table.data .faint { font-size: inherit; }
 .tile-value { font-size: 20px; font-weight: 750; }
 .tile-sub { font-size: 12px; color: var(--text-3); }
 @media print { .banner, .quick-actions, .tiles { display: none; } }
+
+/* ---------- Dépense rapide ---------- */
+.quick { gap: 10px; padding-top: calc(var(--s2) + env(safe-area-inset-top)); }
+.app:has(.quick) { padding-bottom: env(safe-area-inset-bottom); }
+.quick-amount { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+.quick-amount > span { font-size: 44px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
+.quick-amount .seg { width: 132px; flex: none; }
+.quick-cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.quick-cats button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px; border: 2px solid transparent; border-radius: var(--r-field); background: none; font-size: 11px; color: var(--text-2); text-align: center; line-height: 1.15; }
+.quick-cats button[aria-pressed='true'] { border-color: var(--primary); background: var(--primary-soft); color: var(--text); font-weight: 600; }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
+.keypad button { min-height: 50px; border: 0; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); font-size: 22px; font-weight: 600; color: var(--text); display: grid; place-items: center; }
+.keypad button:active { background: var(--surface-2); }
+.quick-save { min-height: 54px; font-size: 17px; }

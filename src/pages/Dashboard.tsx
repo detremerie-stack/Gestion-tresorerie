@@ -118,7 +118,7 @@ export default function Dashboard() {
       </section>
 
       <nav className="quick-actions" aria-label="Raccourcis">
-        <Link to="/operations/nouvelle?type=expense"><span><Minus size={22} /></span>Dépense</Link>
+        <Link to="/rapide"><span><Minus size={22} /></span>Dépense</Link>
         <Link to="/operations/nouvelle?type=income"><span><Plus size={22} /></span>Revenu</Link>
         <Link to="/import"><span><Upload size={20} /></span>Relevé</Link>
         <Link to="/previsionnel"><span><LineChart size={20} /></span>Prévisions</Link>
