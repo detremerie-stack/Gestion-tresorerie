@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Cloud, CloudOff, Copy, LogOut, RefreshCw, Users } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { QrCode } from '../ui/QrCode'
+import { Cloud, CloudOff, Copy, LogOut, RefreshCw, Share2, Users } from 'lucide-react'
 import type { User } from 'firebase/auth'
 import { useStore } from '../data/store'
 import { findHousehold, isBuiltIn, isConfigured, linkHousehold, onSyncStatus, onUser, signInGoogle, signOut, startRealtime, syncNow, type SyncStatus } from '../data/sync'
@@ -100,11 +102,24 @@ export default function SyncPage() {
 
 /** Mode opératoire pour rejoindre le foyer depuis un 2e téléphone (Véra). */
 function JoinGuide({ open, code }: { open: boolean; code?: string }) {
+  const appUrl = `${location.origin}${location.pathname}`
+  const joinUrl = code ? `${appUrl}#/parametres/synchro?rejoindre=${code}` : appUrl
+  const share = () => {
+    const text = code ? `Fare Moni : ouvre ce lien dans Chrome pour rejoindre notre foyer (code ${code}) : ${joinUrl}` : `Fare Moni : ${appUrl}`
+    if (navigator.share) void navigator.share({ title: 'Fare Moni', text, url: joinUrl }).catch(() => {})
+    else void navigator.clipboard?.writeText(text)
+  }
   return (
     <details className="card" open={open}>
       <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Mode opératoire : rejoindre le foyer depuis un autre téléphone</summary>
+      <div className="stack" style={{ alignItems: 'center', marginTop: 12, gap: 8 }}>
+        <QrCode value={joinUrl} />
+        <span className="faint" style={{ textAlign: 'center' }}>{code ? 'À scanner avec l’appareil photo de l’autre téléphone : il ouvre l’app directement sur « Rejoindre », code déjà rempli.' : 'À scanner avec l’appareil photo de l’autre téléphone pour ouvrir l’app.'}</span>
+        <code style={{ wordBreak: 'break-all', fontSize: 13, textAlign: 'center' }}>{appUrl}</code>
+        <button type="button" className="btn sm" onClick={share}><Share2 size={16} />Envoyer le lien (SMS, WhatsApp…)</button>
+      </div>
       <ol className="stack" style={{ margin: '12px 0 0', paddingLeft: 22, gap: 10 }}>
-        <li>Ouvrez l'adresse de l'app dans <strong>Chrome</strong> sur le téléphone, puis menu <strong>⋮ › Installer l'application</strong> (ou <em>Plus › Installer l'application</em>).</li>
+        <li>Scannez le QR code ci-dessus (ou ouvrez l'adresse <strong>{appUrl}</strong>) dans <strong>Chrome</strong> sur le téléphone, puis menu <strong>⋮ › Installer l'application</strong>.</li>
         <li>Au premier lancement, choisissez votre prénom puis <strong>« Commencer à vide »</strong> (ne pas reprendre les abonnements : ils sont déjà dans le foyer).</li>
         <li>Allez dans <strong>Plus › Synchronisation</strong> et touchez <strong>« Continuer avec Google »</strong> ; choisissez votre propre compte Google.</li>
         <li>Choisissez <strong>« Rejoindre »</strong> et tapez le code d'invitation{code ? <> : <strong className="num" style={{ letterSpacing: '0.1em' }}>{code}</strong></> : ' (visible sur le téléphone de la personne qui a créé le foyer, dans cette même page)'}, puis <strong>« Rejoindre »</strong>.</li>
@@ -141,8 +156,21 @@ function AuthForm({ run, busy, err }: { run: (fn: () => Promise<void>) => Promis
 }
 
 function HouseholdForm({ run, busy, err }: { run: (fn: () => Promise<void>) => Promise<void>; busy: boolean; err?: string }) {
-  const [mode, setMode] = useState<'create' | 'join'>('create')
-  const [value, setValue] = useState('Lionel & Véra')
+  const [params] = useSearchParams()
+  const invited = params.get('rejoindre')?.toUpperCase()
+  const [mode, setMode] = useState<'create' | 'join'>(invited ? 'join' : 'create')
+  const [value, setValue] = useState(invited ?? 'Lionel & Véra')
+  const onboarded = useStore((s) => s.onboarded)
+  const [me, setMe] = useState('m-vera')
+  const go = () => run(async () => {
+    await linkHousehold(mode, value.trim())
+    // Arrivé par le QR code sans passer par l'accueil : on termine l'accueil sans recréer de données par défaut
+    // (elles écraseraient celles du foyer).
+    if (!useStore.getState().onboarded) {
+      useStore.setState({ onboarded: true })
+      useStore.getState().setSettings({ currentMember: me })
+    }
+  })
   return (
     <Section title="Foyer">
       <div className="card form">
@@ -150,7 +178,13 @@ function HouseholdForm({ run, busy, err }: { run: (fn: () => Promise<void>) => P
         <TextField label={mode === 'create' ? 'Nom du foyer' : "Code d'invitation"} value={value} onChange={setValue} autoCapitalize={mode === 'join' ? 'characters' : undefined}
           hint={mode === 'create' ? 'Toutes les données de ce téléphone seront envoyées dans le foyer.' : 'Les données du foyer remplacent les valeurs par défaut de ce téléphone ; vos ajouts sont conservés.'} />
         {err && <p role="alert" style={{ color: 'var(--expense)', margin: 0 }}>{err}</p>}
-        <button className="btn primary" disabled={busy || !value.trim()} onClick={() => void run(() => linkHousehold(mode, value.trim()))}>{busy ? 'Patientez…' : mode === 'create' ? 'Créer' : 'Rejoindre'}</button>
+        {!onboarded && (
+          <div className="field">
+            <span className="label">Je suis</span>
+            <Segmented label="Je suis" value={me} onChange={setMe} options={[{ value: 'm-lionel', label: 'Lionel' }, { value: 'm-vera', label: 'Véra' }]} />
+          </div>
+        )}
+        <button className="btn primary" disabled={busy || !value.trim()} onClick={() => void go()}>{busy ? 'Patientez…' : mode === 'create' ? 'Créer' : 'Rejoindre'}</button>
       </div>
     </Section>
   )
