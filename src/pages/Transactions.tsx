@@ -25,6 +25,7 @@ export default function Transactions() {
   const visibleYears = useStore((s) => s.settings.visibleYears ?? 2)
   const archiveFrom = archiveStart(today(), visibleYears)
   const archives = params.get('archives') === '1'
+  const complet = useStore((s) => s.settings.mode === 'complet')
   const recentLimit = addInterval(today(), -60, 'day')
 
   const month = params.get('mois') ?? monthKey(today())
@@ -68,7 +69,7 @@ export default function Transactions() {
   const activeCat = catId && catId !== 'none' ? cats.get(catId) : undefined
 
   return (
-    <Page title="Opérations" actions={<Link to="/import" className="icon-btn" aria-label="Importer un relevé"><Upload size={20} /></Link>}>
+    <Page title="Historique" actions={<Link to="/import" className="icon-btn" aria-label="Importer un relevé"><Upload size={20} /></Link>}>
       <div className="stack" style={{ gap: 12 }}>
         <div className="search">
           <Search size={18} />
@@ -156,7 +157,7 @@ export default function Transactions() {
                             {t.originalCurrency && <span className="faint"><Money value={t.originalAmount ?? 0} currency={t.originalCurrency} /></span>}
                             <span className="faint" style={{ display: 'flex', gap: 4 }}>
                               {t.attachments?.length ? <Paperclip size={12} aria-label="Justificatif joint" /> : null}
-                              {!t.importHash && t.type !== 'transfer' && t.date >= recentLimit && accountsMap.get(t.accountId)?.type !== 'cash' && <span title="Saisie pas encore retrouvée sur un relevé">à rapprocher</span>}
+                              {complet && !t.importHash && t.type !== 'transfer' && t.date >= recentLimit && accountsMap.get(t.accountId)?.type !== 'cash' && <span title="Saisie pas encore retrouvée sur un relevé">pas encore vu à la banque</span>}
                             </span>
                           </div>
                         </Link>

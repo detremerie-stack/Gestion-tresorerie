@@ -48,7 +48,7 @@ export function InstallCard() {
       <button className="btn primary block" onClick={() => void install()}>
         <Download size={18} />Installer l'application
       </button>
-      {(help || !deferred) && (
+      {help && (
         <div className="callout" style={{ fontSize: 14 }}>
           <Info size={18} />
           <span>

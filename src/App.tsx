@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { HashRouter, NavLink, Route, Routes, useLocation, Link } from 'react-router-dom'
+import { HashRouter, NavLink, Route, Routes, useLocation, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeftRight, Home, List, MoreHorizontal, Plane, Plus, Repeat, TrendingDown, TrendingUp, X } from 'lucide-react'
 import { useStore } from './data/store'
 import { initSync } from './data/sync'
@@ -70,6 +70,8 @@ function QuickAdd({ onClose }: { onClose: () => void }) {
 function Nav() {
   const [open, setOpen] = useState(false)
   const loc = useLocation()
+  const navigate = useNavigate()
+  const simple = useStore((s) => s.settings.mode !== 'complet')
   useEffect(() => {
     setOpen(false)
   }, [loc.pathname])
@@ -79,12 +81,12 @@ function Nav() {
       <nav className="nav no-print" aria-label="Navigation principale">
         <ul>
           <li><NavLink to="/" end><Home size={22} />Accueil</NavLink></li>
-          <li><NavLink to="/operations"><List size={22} />Opérations</NavLink></li>
+          <li><NavLink to="/operations"><List size={22} />Historique</NavLink></li>
           <li className="fab-slot">
-            <button className="fab" aria-label="Ajouter une opération ou un abonnement" onClick={() => setOpen(true)}><Plus size={28} /></button>
+            <button className="fab" aria-label="Ajouter une dépense" onClick={() => (simple ? navigate('/rapide') : setOpen(true))}><Plus size={28} /></button>
           </li>
           <li><NavLink to="/abonnements"><Repeat size={22} />Abonnements</NavLink></li>
-          <li><NavLink to="/plus"><MoreHorizontal size={22} />Plus</NavLink></li>
+          <li><NavLink to="/plus"><MoreHorizontal size={22} />Menu</NavLink></li>
         </ul>
       </nav>
       {open && <QuickAdd onClose={() => setOpen(false)} />}

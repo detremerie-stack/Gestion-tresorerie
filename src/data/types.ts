@@ -219,6 +219,8 @@ export interface Settings {
   /** Identifiant du membre utilisant cet appareil. */
   currentMember?: MemberId
   subscriptionsView: 'month' | 'year'
+  /** Affichage : « simple » (par défaut, l'essentiel) ou « complet » (tous les outils). */
+  mode?: 'simple' | 'complet'
   /** Nombre d'années affichées (année en cours incluse) ; les plus anciennes passent en archives. */
   visibleYears?: number
   /** Dépenses courantes mensuelles retenues pour le prévisionnel (sinon : moyenne des 3 derniers mois). */

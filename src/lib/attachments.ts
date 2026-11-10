@@ -67,3 +67,6 @@ export async function ocrImage(file: Blob, onProgress?: (p: number) => void): Pr
     await worker.terminate()
   }
 }
+
+/** Photo de ticket prise depuis l'accueil, à traiter par l'écran de dépense rapide. */
+export const pendingTicket: { file?: File } = {}

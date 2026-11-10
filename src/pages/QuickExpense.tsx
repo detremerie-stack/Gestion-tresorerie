@@ -7,7 +7,7 @@ import { addInterval, today } from '../lib/dates'
 import { normalize } from '../lib/id'
 import { effectiveFee, formatMoney, fromXPF, isFixedRate, parseAmount, rateOf, toXPF, type Currency } from '../lib/money'
 import { fetchRates } from '../lib/rates'
-import { ocrImage, saveAttachment } from '../lib/attachments'
+import { ocrImage, pendingTicket, saveAttachment } from '../lib/attachments'
 import { parseReceipt } from '../lib/receipt'
 import type { AttachmentMeta } from '../data/types'
 import { AttachmentThumb } from '../ui/Attachments'
@@ -132,6 +132,11 @@ export default function QuickExpense() {
     setAccountId(f.accountId)
   }
 
+  useEffect(() => {
+    const f = pendingTicket.file
+    if (f) { pendingTicket.file = undefined; void onTicket(f) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const save = () => {
     if (!(value > 0) || !account) return
     const foreign = currency !== account.currency
@@ -223,6 +228,7 @@ export default function QuickExpense() {
           <button key={k} type="button" onClick={() => press(k)} aria-label={k === '⌫' ? 'Effacer' : k}>{k === '⌫' ? <Delete size={22} /> : k}</button>
         ))}
       </div>
+      <Link to="/operations/nouvelle?type=income" replace className="faint" style={{ textAlign: 'center' }}>Autre chose ? Revenu, virement, dépense détaillée</Link>
       <button className="btn primary block quick-save" disabled={!(value > 0) || !account} onClick={save}>
         Enregistrer {value > 0 ? formatMoney(value, currency) : ''}
       </button>

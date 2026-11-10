@@ -70,6 +70,11 @@ export default function Settings() {
             <Segmented label="Membre" value={settings.currentMember ?? ''} onChange={(v) => setSettings({ currentMember: v })} options={members.map((m) => ({ value: m.id, label: m.name }))} />
           </div>
           <div className="field">
+            <span className="label">Affichage</span>
+            <Segmented label="Affichage" value={settings.mode ?? 'simple'} onChange={(v) => setSettings({ mode: v })} options={[{ value: 'simple', label: 'Simple' }, { value: 'complet', label: 'Complet' }]} />
+            <span className="hint">Simple : l'essentiel, sans jargon. Complet : tous les outils (budgets, rapprochement, raccourcis d'ajout).</span>
+          </div>
+          <div className="field">
             <span className="label">Thème</span>
             <Segmented label="Thème" value={settings.theme} onChange={(v) => setSettings({ theme: v })} options={[{ value: 'system', label: 'Auto' }, { value: 'light', label: 'Clair' }, { value: 'dark', label: 'Sombre' }]} />
           </div>

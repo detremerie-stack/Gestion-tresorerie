@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertCircle, CalendarClock, Check, Landmark, LineChart, Minus, PiggyBank, Plane, Plus, Repeat, Settings, TrendingDown, TrendingUp, Upload } from 'lucide-react'
+import { pendingTicket } from '../lib/attachments'
+import { Camera, Check, ChevronRight, Minus, Settings } from 'lucide-react'
 import { useList, useMap, useStore } from '../data/store'
-import { useAccounts, useBalances } from '../data/hooks'
+import { useBalances } from '../data/hooks'
 import { useForecast } from '../data/useForecast'
 import { useTripStatuses } from './Trips'
 import { addInterval, daysBetween, formatLongDate, formatShortDate, monthKey, monthLabel, today } from '../lib/dates'
@@ -12,12 +13,11 @@ import { dueInstallments, installmentsBetween, loanStatus } from '../lib/loans'
 import { effectiveFee, formatMoney, isFixedRate, toXPF } from '../lib/money'
 import { Money } from '../ui/Money'
 import { Section } from '../ui/Page'
-import { Meter, RankedBars } from '../ui/Charts'
+import { Meter } from '../ui/Charts'
 import { CatIcon } from '../ui/Icon'
 import { useToast } from '../ui/toast'
 
 export default function Dashboard() {
-  const nav = useNavigate()
   const rates = useStore((s) => s.settings.rates)
   const me = useStore((s) => s.data.members[s.settings.currentMember ?? '']?.name)
   const markPaid = useStore((s) => s.markSubscriptionPaid)
@@ -30,7 +30,6 @@ export default function Dashboard() {
   const budgets = useList('budgets')
   const cats = useMap('categories')
   const accountsMap = useMap('accounts')
-  const accounts = useAccounts()
   const balances = useBalances()
   const t = today()
   const month = monthKey(t)
@@ -91,89 +90,66 @@ export default function Dashboard() {
     .sort((a, b) => b.spent / b.b.amount - a.spent / a.b.amount)
     .slice(0, 3)
 
+  const nav = useNavigate()
+  const complet = useStore((s) => s.settings.mode === 'complet')
+  const first = fc.rows[0]
+  const bills = first.subscriptions + first.loans + first.planned
+  const expected = first.income
+  const afterBills = balances.total - bills + expected
+  const monthName = monthLabel(month).split(' ')[0]
+  const recent = [...txs].filter((x) => x.type !== 'transfer').sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt)).slice(0, 5)
+  const topCats = catTotals.slice(0, 4)
+  const maxCat = Math.max(1, ...topCats.map((c) => c.total))
+
   return (
     <main className="page">
-      <section className="banner" aria-label="Résumé du foyer">
+      <section className="banner" aria-label="Où j'en suis">
         <svg className="banner-waves" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
           <path d="M0 70 C 70 45, 130 95, 200 70 S 330 45, 400 70 V120 H0Z" fill="#fff" opacity=".07" />
           <path d="M0 92 C 70 67, 130 117, 200 92 S 330 67, 400 92 V120 H0Z" fill="#fff" opacity=".08" />
         </svg>
         <div className="banner-top">
           <span className="brand"><img src="./icon.svg" alt="" width={32} height={32} />Fare Moni</span>
-          <Link to="/parametres" className="banner-icon" aria-label="Paramètres"><Settings size={20} /></Link>
+          <Link to="/parametres" className="banner-icon" aria-label="Réglages"><Settings size={20} /></Link>
         </div>
         <div>
           <h1 className="banner-hello">Ia ora na{me ? `, ${me}` : ''}</h1>
           <span className="banner-date">{formatLongDate(t)}</span>
         </div>
         <div className="banner-balance">
-          <span>Solde de tous les comptes</span>
+          <span>Sur nos comptes aujourd'hui</span>
           <Money className="banner-amount" value={balances.total} approx={balances.approx} />
-          {debt > 0 && <span className="banner-small">Prêts restant dus <Money value={debt} /> · patrimoine net <Money value={balances.total - debt} /></span>}
         </div>
-        <div className="banner-kpis">
-          <div><span><TrendingUp size={15} aria-hidden />Entrées en {monthLabel(month).split(' ')[0]}</span><Money className="num" value={tot.income} sign /></div>
-          <div><span><TrendingDown size={15} aria-hidden />Sorties en {monthLabel(month).split(' ')[0]}</span><Money className="num" value={-tot.expense} /></div>
-        </div>
+        {(bills > 0 || expected > 0) && (
+          <div className="banner-lines">
+            {bills > 0 && <div><span>Encore à payer en {monthName}</span><Money className="num" value={-bills} /></div>}
+            {expected > 0 && <div><span>Encore à recevoir</span><Money className="num" value={expected} sign /></div>}
+            <div className="strong"><span>Il restera fin {monthName}</span><Money className="num" value={afterBills} /></div>
+          </div>
+        )}
       </section>
 
-      <nav className="quick-actions" aria-label="Raccourcis">
-        <Link to="/rapide"><span><Minus size={22} /></span>Dépense</Link>
-        <Link to="/operations/nouvelle?type=income"><span><Plus size={22} /></span>Revenu</Link>
-        <Link to="/import"><span><Upload size={20} /></span>Relevé</Link>
-        <Link to="/previsionnel"><span><LineChart size={20} /></span>Prévisions</Link>
-      </nav>
-
-      <div className="tiles">
-        <Link to="/previsionnel" className="tile">
-          <span className="tile-label"><LineChart size={16} aria-hidden />Prévu fin {monthLabel(fc.rows[1].month).split(' ')[0]}</span>
-          <Money className={`tile-value ${fc.rows[1].endBalance < 0 ? 'expense' : ''}`} value={fc.rows[1].endBalance} approx />
-          {fc.rows.some((r) => r.endBalance < 0) ? <span className="badge warn">Passage sous zéro</span> : <span className="tile-sub">solde estimé</span>}
-        </Link>
-        <Link to={nextTrip ? `/voyages/${nextTrip.trip.id}` : '/voyages/nouveau'} className="tile">
-          <span className="tile-label"><Plane size={16} aria-hidden />{nextTrip ? nextTrip.trip.name : 'Voyage'}</span>
-          {nextTrip ? (
-            <>
-              <strong className="tile-value num">{nextTrip.st.phase === 'pendant' ? 'En cours' : `J−${nextTrip.st.daysToGo}`}</strong>
-              <span className="tile-sub">{nextTrip.st.toSave > 0 ? `${formatMoney(nextTrip.st.perMonth)}/mois à épargner` : 'Budget couvert ✓'}</span>
-            </>
-          ) : <><strong className="tile-value">Préparer</strong><span className="tile-sub">budget et épargne</span></>}
-        </Link>
-        <Link to="/abonnements" className="tile">
-          <span className="tile-label"><Repeat size={16} aria-hidden />Abonnements</span>
-          <Money className="tile-value" value={subsMonthly} approx />
-          <span className="tile-sub">par mois · {activeSubs} actifs</span>
-        </Link>
-        <Link to={loanRows.length ? '/prets' : '/budgets'} className="tile">
-          {loanRows.length ? (
-            <>
-              <span className="tile-label"><Landmark size={16} aria-hidden />Prêts</span>
-              <Money className="tile-value" value={debt} />
-              <span className="tile-sub">restant dû · {formatMoney(loanMonthly)}/mois</span>
-            </>
-          ) : (
-            <>
-              <span className="tile-label"><PiggyBank size={16} aria-hidden />Budgets</span>
-              <strong className="tile-value">{budgets.length}</strong>
-              <span className="tile-sub">plafonds suivis</span>
-            </>
-          )}
-        </Link>
+      <div className="home-actions">
+        <Link to="/rapide" className="btn primary big"><Minus size={22} />Ajouter une dépense</Link>
+        <label className="btn big" style={{ cursor: 'pointer' }}>
+          <Camera size={22} />Ticket
+          <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) { pendingTicket.file = f; nav('/rapide') } }} />
+        </label>
       </div>
 
       {due.length > 0 && (
-        <Section title="À enregistrer">
+        <Section title="À confirmer">
           <div className="card flush">
             <ul className="list">
-              {due.slice(0, 6).map((d) => (
+              {due.slice(0, 4).map((d) => (
                 <li key={d.key}>
                   <div className="row">
-                    <AlertCircle size={20} className="warning" aria-hidden />
+                    <span className="dot" style={{ background: d.color, width: 12, height: 12 }} />
                     <Link className="main" to={d.to} style={{ color: 'inherit' }}>
                       <span className="title">{d.name}</span>
-                      <span className="sub">Prélevé le {formatShortDate(d.date)} · pas encore dans les opérations</span>
+                      <span className="sub">Prévu le {formatShortDate(d.date).replace(/\.$/, '')}. C'est bien passé ?</span>
                     </Link>
-                    <button className="btn sm" onClick={d.pay}><Check size={16} />Payé</button>
+                    <button className="btn sm" onClick={d.pay}><Check size={16} />Oui</button>
                   </div>
                 </li>
               ))}
@@ -182,117 +158,108 @@ export default function Dashboard() {
         </Section>
       )}
 
-      <Section title="Prochains prélèvements · 30 jours" action={<Link to="/abonnements?vue=avenir">Tout voir</Link>}>
+      <Section title={`Ce mois-ci · ${monthName}`} action={<Link to="/rapports">Détail</Link>}>
+        <div className="card stack" style={{ gap: 14 }}>
+          <div className="split">
+            <div><div className="faint">Dépensé</div><Money className="big-num" value={tot.expense} /></div>
+            <div style={{ textAlign: 'right' }}><div className="faint">Reçu</div><Money className="big-num income" value={tot.income} /></div>
+          </div>
+          {topCats.length === 0 ? <p className="muted" style={{ margin: 0 }}>Rien pour l'instant. Touchez « Ajouter une dépense ».</p> : topCats.map((c) => {
+            const cat = cats.get(c.categoryId)
+            return (
+              <Link key={c.categoryId} to={`/operations?cat=${c.categoryId || 'none'}&mois=${month}`} className="simple-bar">
+                <CatIcon icon={cat?.icon} color={cat?.color} small />
+                <div className="grow">
+                  <div className="split"><span>{cat?.name ?? 'À classer'}</span><Money className="num" value={c.total} /></div>
+                  <div className="track"><span style={{ width: `${(c.total / maxCat) * 100}%`, background: cat?.color ?? '#94A3B8' }} /></div>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      </Section>
+
+      <Section title="À payer bientôt" action={<Link to="/abonnements?vue=avenir">Tout voir</Link>}>
         <div className="card flush">
-          {upcoming.length === 0 ? (
-            <p className="row muted">Aucun prélèvement prévu.</p>
-          ) : (
+          {upcoming.length === 0 ? <p className="row muted">Rien de prévu dans les 30 jours.</p> : (
             <ul className="list">
-              {upcoming.slice(0, 6).map((u) => {
+              {upcoming.slice(0, 4).map((u) => {
                 const d = daysBetween(t, u.date)
                 return (
                   <li key={u.key}>
                     <Link className="row" to={u.to}>
                       <span className="dot" style={{ background: u.color, width: 12, height: 12 }} />
                       <div className="main">
-                        <span className="title">{u.name}</span>
-                        <span className="sub">{formatShortDate(u.date)} · {d === 1 ? 'demain' : `dans ${d} jours`}</span>
+                        <span className="title">{u.name.replace(' · échéance', '')}</span>
+                        <span className="sub">{d === 1 ? 'Demain' : `Dans ${d} jours`} · {formatShortDate(u.date)}</span>
                       </div>
-                      <div className="end">
-                        <Money className="amount" value={u.xpf} approx={u.approx} />
-                        {d <= u.remind && <span className="badge warn"><CalendarClock size={12} />Bientôt</span>}
-                      </div>
+                      <Money className="amount" value={u.xpf} approx={u.approx} />
                     </Link>
                   </li>
                 )
               })}
-              <li>
-                <div className="row" style={{ minHeight: 48 }}>
-                  <span className="main muted">Total sur 30 jours</span>
-                  <Money className="amount" value={upcomingTotal} approx={upcoming.some((u) => u.approx)} />
-                </div>
-              </li>
             </ul>
           )}
         </div>
       </Section>
 
-      {budgetRows.length > 0 && (
-        <Section title="Budgets du mois" action={<Link to="/budgets">Gérer</Link>}>
-          <div className="card stack" style={{ gap: 16 }}>
-            {budgetRows.map(({ b, cat, spent }) => (
-              <div key={b.id} className="stack" style={{ gap: 6 }}>
-                <div className="split">
-                  <span>{cat!.name}</span>
-                  <span className="faint num">
-                    {spent > b.amount ? <strong className="expense">Dépassé · </strong> : null}
-                    <Money value={spent} /> / <Money value={b.amount} />
-                  </span>
-                </div>
-                <Meter value={spent} max={b.amount} label={`Budget ${cat!.name}`} />
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      <Section title="Dépenses du mois" action={<Link to="/rapports">Rapports</Link>}>
-        <div className="card">
-          {catTotals.length === 0 ? (
-            <p className="muted" style={{ margin: 0 }}>Aucune dépense ce mois-ci. Ajoutez-en avec le bouton + ou importez un relevé.</p>
-          ) : (
-            <RankedBars
-              total={tot.expense}
-              onSelect={(id) => nav(`/operations?cat=${id || 'none'}&mois=${month}`)}
-              items={catTotals.slice(0, 6).map((c) => {
-                const cat = cats.get(c.categoryId)
-                return { key: c.categoryId, label: cat?.name ?? 'Sans catégorie', value: c.total, icon: cat?.icon, color: cat?.color }
-              })}
-            />
-          )}
-        </div>
-      </Section>
-
-      {loanRows.length > 0 && (
-        <Section title="Prêts" action={<Link to="/prets">Détails</Link>}>
-          <div className="card flush">
-            <ul className="list">
-              {loanRows.map(({ l, st }) => (
-                <li key={l.id}>
-                  <Link className="row" to={`/prets/${l.id}`}>
-                    <span className="dot" style={{ background: l.color, width: 12, height: 12 }} />
-                    <div className="main" style={{ gap: 6 }}>
-                      <span className="title">{l.name}</span>
-                      <Meter value={l.principal - st.remaining} max={l.principal} label={`Remboursé ${l.name}`} />
-                    </div>
-                    <div className="end"><Money className="amount" value={st.remaining} currency={l.currency} /><span className="faint">restant dû</span></div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Section>
-      )}
-
-      <Section title="Comptes" action={<Link to="/comptes">Gérer</Link>}>
+      <Section title="Dernières dépenses et rentrées" action={<Link to="/operations">Historique</Link>}>
         <div className="card flush">
-          <ul className="list">
-            {balances.rows.map(({ account: a, balance, xpf }) => (
-              <li key={a.id}>
-                <Link className="row" to={`/operations?compte=${a.id}`}>
-                  <CatIcon icon={a.type === 'cash' ? 'banknote' : a.type === 'credit' ? 'credit-card' : a.type === 'savings' ? 'piggy-bank' : 'landmark'} color={a.color} />
-                  <div className="main">
-                    <span className="title">{a.name}</span>
-                    {a.currency !== 'XPF' && <span className="sub"><Money value={xpf} approx={a.currency !== 'EUR'} /></span>}
-                  </div>
-                  <Money className="amount" value={balance} currency={a.currency} tone />
-                </Link>
-              </li>
-            ))}
-            {accounts.length === 0 && <li className="row muted">Aucun compte.</li>}
-          </ul>
+          {recent.length === 0 ? <p className="row muted">Aucune pour l'instant.</p> : (
+            <ul className="list">
+              {recent.map((x) => {
+                const cat = cats.get(x.categoryId ?? '')
+                const acc = accountsMap.get(x.accountId)
+                return (
+                  <li key={x.id}>
+                    <Link className="row" to={`/operations/${x.id}`}>
+                      <CatIcon icon={cat?.icon} color={cat?.color} small />
+                      <div className="main">
+                        <span className="title">{x.payee || cat?.name || 'Dépense'}</span>
+                        <span className="sub">{formatShortDate(x.date)} · {cat?.name ?? 'À classer'}</span>
+                      </div>
+                      <Money className={`amount ${x.type}`} value={x.type === 'expense' ? -x.amount : x.amount} currency={acc?.currency} sign={x.type === 'income'} />
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </div>
       </Section>
+
+      {nextTrip && (
+        <Link to={`/voyages/${nextTrip.trip.id}`} className="card split" style={{ color: 'inherit' }}>
+          <div><strong>✈ {nextTrip.trip.name}</strong><div className="faint">{nextTrip.st.phase === 'pendant' ? 'En cours' : `Départ dans ${nextTrip.st.daysToGo} jours`}{nextTrip.st.toSave > 0 ? ` · mettre ${formatMoney(nextTrip.st.perMonth)} de côté par mois` : ''}</div></div>
+          <ChevronRight size={18} className="faint" />
+        </Link>
+      )}
+
+      {complet && (
+        <>
+          <Section title="En bref">
+            <div className="tiles">
+              <Link to="/previsionnel" className="tile"><span className="tile-label">Fin {monthLabel(fc.rows[1].month).split(' ')[0]} (prévu)</span><Money className={`tile-value ${fc.rows[1].endBalance < 0 ? 'expense' : ''}`} value={fc.rows[1].endBalance} approx /></Link>
+              <Link to="/abonnements" className="tile"><span className="tile-label">Abonnements</span><Money className="tile-value" value={subsMonthly} approx /><span className="tile-sub">par mois · {activeSubs} actifs</span></Link>
+              {loanRows.length > 0 && <Link to="/prets" className="tile"><span className="tile-label">Crédits</span><Money className="tile-value" value={debt} /><span className="tile-sub">reste à rembourser · {formatMoney(loanMonthly)}/mois</span></Link>}
+              <Link to="/comptes" className="tile"><span className="tile-label">Comptes</span><strong className="tile-value">{balances.rows.length}</strong><span className="tile-sub">voir les soldes</span></Link>
+            </div>
+          </Section>
+          {budgetRows.length > 0 && (
+            <Section title="Budgets du mois" action={<Link to="/budgets">Gérer</Link>}>
+              <div className="card stack" style={{ gap: 16 }}>
+                {budgetRows.map(({ b, cat, spent }) => (
+                  <div key={b.id} className="stack" style={{ gap: 6 }}>
+                    <div className="split"><span>{cat!.name}</span><span className="faint num">{spent > b.amount ? <strong className="expense">Dépassé · </strong> : null}<Money value={spent} /> / <Money value={b.amount} /></span></div>
+                    <Meter value={spent} max={b.amount} label={`Budget ${cat!.name}`} />
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+          <p className="faint" style={{ margin: 0, textAlign: 'center' }}>Total prévu sur 30 jours : {formatMoney(upcomingTotal)}</p>
+        </>
+      )}
     </main>
   )
 }
