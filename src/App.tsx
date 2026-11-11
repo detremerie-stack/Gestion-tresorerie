@@ -4,6 +4,7 @@ import { ArrowLeftRight, Home, List, MoreHorizontal, Plane, Plus, Repeat, Trendi
 import { useStore } from './data/store'
 import { initSync } from './data/sync'
 import { Toaster } from './ui/toast'
+import { LockGate } from './ui/LockScreen'
 import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
@@ -119,6 +120,7 @@ export default function App() {
 
   if (!hydrated) return null
   return (
+    <LockGate>
     <HashRouter>
       <ScrollTop />
       <div className="app">
@@ -171,5 +173,6 @@ export default function App() {
         <Toaster />
       </div>
     </HashRouter>
+    </LockGate>
   )
 }

@@ -20,17 +20,17 @@ export default function Loans() {
   const approx = active.some((r) => !isFixedRate(r.l.currency))
 
   return (
-    <Page title="Prêts" back actions={<Link className="icon-btn" to="/prets/nouveau" aria-label="Ajouter un prêt"><Plus /></Link>}>
+    <Page title="Nos crédits" back actions={<Link className="icon-btn" to="/prets/nouveau" aria-label="Ajouter un prêt"><Plus /></Link>}>
       {rows.length === 0 ? (
-        <Empty icon={<Landmark size={40} />} title="Aucun prêt">
-          <span>Crédit immobilier, auto, conso… suivez le capital restant dû, l'échéancier et les intérêts.</span>
-          <Link className="btn primary" to="/prets/nouveau"><Plus size={18} />Ajouter un prêt</Link>
+        <Empty icon={<Landmark size={40} />} title="Aucun crédit">
+          <span>Crédit immobilier, auto, conso… voyez ce qu'il reste à rembourser et jusqu'à quand.</span>
+          <Link className="btn primary" to="/prets/nouveau"><Plus size={18} />Ajouter un crédit</Link>
         </Empty>
       ) : (
         <>
           <div className="card kpis">
-            <div className="kpi"><span className="label">Capital restant dû</span><Money className="value" value={totalRemaining} approx={approx} /></div>
-            <div className="kpi"><span className="label">Mensualités</span><Money className="value" value={totalMonthly} approx={approx} /></div>
+            <div className="kpi"><span className="label">Reste à rembourser</span><Money className="value" value={totalRemaining} approx={approx} /></div>
+            <div className="kpi"><span className="label">Par mois</span><Money className="value" value={totalMonthly} approx={approx} /></div>
           </div>
           <div className="stack" style={{ gap: 12 }}>
             {rows.map(({ l, st }) => (

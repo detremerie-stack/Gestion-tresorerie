@@ -24,6 +24,7 @@ export default function Forecast() {
   const setSettings = useStore((s) => s.setSettings)
   const upsert = useStore((s) => s.upsert)
   const toast = useToast((s) => s.show)
+  const complet = useStore((s) => s.settings.mode === 'complet')
   const accounts = useMap('accounts')
   const cats = useMap('categories')
   const txs = useList('transactions')
@@ -56,13 +57,13 @@ export default function Forecast() {
   const nextOf = (p: Planned) => plannedOccurrences(p, t, addInterval(t, 2, 'year'))[0]
 
   return (
-    <Page title="Prévisionnel" back>
+    <Page title="Les mois à venir" back>
       <Segmented label="Horizon" value={horizon} onChange={setHorizon} options={[{ value: '3', label: '3 mois' }, { value: '6', label: '6 mois' }, { value: '12', label: '12 mois' }]} />
       <div className="card kpis">
         <div className="kpi"><span className="label">Aujourd'hui</span><Money className="value" value={balances.total} approx={balances.approx} /></div>
         <div className="kpi"><span className="label">Fin {monthLabel(end.month, true)}</span><Money className={`value ${end.endBalance < 0 ? 'expense' : ''}`} value={end.endBalance} approx /></div>
-        <div className="kpi"><span className="label">Point bas</span><Money className={`value ${low.endBalance < 0 ? 'expense' : ''}`} value={low.endBalance} approx /><span className="faint" style={{ textTransform: 'capitalize' }}>fin {monthLabel(low.month)}</span></div>
-        <div className="kpi"><span className="label">Dépenses courantes / mois</span>
+        <div className="kpi"><span className="label">Au plus bas</span><Money className={`value ${low.endBalance < 0 ? 'expense' : ''}`} value={low.endBalance} approx /><span className="faint" style={{ textTransform: 'capitalize' }}>fin {monthLabel(low.month)}</span></div>
+        <div className="kpi"><span className="label">Dépenses du quotidien / mois</span>
           {editVar ? (
             <span className="input-group">
               <input className="input" inputMode="numeric" value={varDraft} onChange={(e) => setVarDraft(e.target.value)} aria-label="Dépenses courantes par mois" autoFocus />
@@ -80,10 +81,12 @@ export default function Forecast() {
         <div className="callout warn"><AlertTriangle size={18} /><span>Le solde passerait <strong>sous zéro</strong> fin {monthLabel(low.month)} ({formatMoney(low.endBalance)}). Réduisez les dépenses ou décalez une dépense prévue.</span></div>
       )}
 
-      <Section title="Solde prévu en fin de mois">
+      <Section title="Ce qu'il restera à la fin de chaque mois">
         <div className="card"><BalanceBars data={rows.map((r) => ({ month: r.month, value: r.endBalance }))} /></div>
       </Section>
 
+      <details className="more-options" open={complet}>
+        <summary>Voir le détail mois par mois</summary>
       <Section title="Détail par mois">
         <div className="card flush table-wrap">
           <table className="data">
@@ -110,8 +113,9 @@ export default function Forecast() {
         </div>
         <p className="faint" style={{ margin: 0 }}>Estimation : soldes actuels + prévisions + abonnements + échéances de prêts + budgets voyages restants − dépenses courantes. Les virements entre vos comptes ne changent pas le total.</p>
       </Section>
+      </details>
 
-      <Section title="Entrées et sorties prévues" action={<Link to="/previsionnel/nouveau">Ajouter</Link>}>
+      <Section title="Ce qui est prévu (salaires, factures…)" action={<Link to="/previsionnel/nouveau">Ajouter</Link>}>
         <div className="card flush">
           <ul className="list">
             {sorted.map((p) => {
@@ -130,14 +134,14 @@ export default function Forecast() {
                 </li>
               )
             })}
-            {sorted.length === 0 && <li className="row muted">Aucune prévision. Ajoutez vos salaires, la pension, les impôts, la rentrée scolaire…</li>}
+            {sorted.length === 0 && <li className="row muted">Rien de prévu. Ajoutez vos salaires, la pension, les impôts, la rentrée scolaire…</li>}
           </ul>
         </div>
         <Link className="btn" to="/previsionnel/nouveau"><Plus size={18} />Nouvelle prévision</Link>
       </Section>
 
       {suggestions.length > 0 && (
-        <Section title="Détectés dans vos opérations">
+        <Section title="Repérés dans votre historique : à ajouter ?">
           <div className="card flush">
             <ul className="list">
               {suggestions.map((c) => (

@@ -29,6 +29,7 @@ export default function Subscriptions() {
   const rates = useStore((s) => s.settings.rates)
   const view = useStore((s) => s.settings.subscriptionsView)
   const setSettings = useStore((s) => s.setSettings)
+  const complet = useStore((s) => s.settings.mode === 'complet')
   const t = today()
   const fee = (s: Subscription) => {
     const a = accounts.get(s.accountId ?? '')
@@ -50,7 +51,7 @@ export default function Subscriptions() {
         </button>
       }
     >
-      <Segmented label="Vue" value={tab} onChange={setTab} options={[{ value: 'liste', label: 'Liste' }, { value: 'avenir', label: 'À venir' }, { value: 'rapport', label: 'Rapport' }]} />
+      <Segmented label="Vue" value={tab} onChange={setTab} options={[{ value: 'liste', label: 'Mes abonnements' }, { value: 'avenir', label: 'À payer bientôt' }, ...(complet ? [{ value: 'rapport' as Tab, label: 'Bilan' }] : [])]} />
       {subs.length === 0 ? (
         <Empty icon={<Repeat size={40} />} title="Aucun abonnement">
           <Link className="btn primary" to="/abonnements/nouveau"><Plus size={18} />Ajouter un abonnement</Link>
@@ -67,6 +68,7 @@ export default function Subscriptions() {
 }
 
 function SubList({ subs, today: t, fee }: { subs: Subscription[]; today: string; fee: (s: Subscription) => number }) {
+  const complet = useStore((s) => s.settings.mode === 'complet')
   const rates = useStore((s) => s.settings.rates)
   const [sort, setSort] = useState<Sort>('date')
   const [showInactive, setShowInactive] = useState(false)
@@ -83,11 +85,13 @@ function SubList({ subs, today: t, fee }: { subs: Subscription[]; today: string;
   return (
     <>
       <div className="split">
-        <div className="chips" role="group" aria-label="Trier par">
+        {complet ? (
+          <div className="chips" role="group" aria-label="Trier par">
           {([['date', 'Échéance'], ['prix', 'Prix'], ['nom', 'Nom']] as const).map(([v, l]) => (
             <button key={v} className="chip" aria-pressed={sort === v} onClick={() => setSort(v)}>{l}</button>
           ))}
         </div>
+        ) : <span className="muted">Du plus proche au plus lointain</span>}
         <Link to="/abonnements/nouveau" className="btn sm primary"><Plus size={16} />Ajouter</Link>
       </div>
       <div className="subs">

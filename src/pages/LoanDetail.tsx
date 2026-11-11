@@ -15,6 +15,7 @@ export default function LoanDetail() {
   const nav = useNavigate()
   const loan = useStore((s) => (id ? s.data.loans[id] : undefined))
   const markPaid = useStore((s) => s.markLoanPaid)
+  const complet = useStore((s) => s.settings.mode === 'complet')
   const toast = useToast((s) => s.show)
   const [open, setOpen] = useState<number | null>(null)
   const t = today()
@@ -38,23 +39,23 @@ export default function LoanDetail() {
     <Page title={loan.name} back="/prets" actions={<Link className="icon-btn" to={`/prets/${loan.id}/modifier`} aria-label="Modifier"><Pencil size={20} /></Link>}>
       <div className="card stack" style={{ gap: 14 }}>
         <div className="hero">
-          <span className="label">Capital restant dû au {formatDate(t)}</span>
+          <span className="label">Reste à rembourser au {formatDate(t)}</span>
           <Money className="value" value={st.remaining} currency={cur} />
         </div>
         <Meter value={loan.principal - st.remaining} max={loan.principal} label="Capital remboursé" />
         <span className="faint">{Math.round(st.progress * 100)} % remboursé · {f(loan.principal - st.remaining)} sur {f(loan.principal)}</span>
         <div className="kpis">
           <div className="kpi"><span className="label">Mensualité</span><span className="value num">{f(st.payment + loan.insuranceMonthly)}</span>{loan.insuranceMonthly > 0 && <span className="faint">dont assurance {f(loan.insuranceMonthly)}</span>}</div>
-          <div className="kpi"><span className="label">Prochaine échéance</span><span className="value num">{st.nextDate ? formatDate(st.nextDate) : '—'}</span></div>
+          <div className="kpi"><span className="label">Prochain paiement</span><span className="value num">{st.nextDate ? formatDate(st.nextDate) : '—'}</span></div>
           <div className="kpi"><span className="label">Fin du prêt</span><span className="value num" style={{ textTransform: 'capitalize' }}>{st.endDate ? monthLabel(st.endDate.slice(0, 7)) : '—'}</span>{remainingMonths > 0 && <span className="faint">encore {durationLabel(remainingMonths)}</span>}</div>
-          <div className="kpi"><span className="label">Échéances</span><span className="value num">{st.paidCount} / {st.totalCount}</span></div>
+          <div className="kpi"><span className="label">Paiements faits</span><span className="value num">{st.paidCount} / {st.totalCount}</span></div>
         </div>
       </div>
 
       {due.length > 0 && (
         <div className="callout warn" style={{ alignItems: 'center' }}>
           <span style={{ flex: 1 }}>
-            {due.length} échéance{due.length > 1 ? 's' : ''} passée{due.length > 1 ? 's' : ''} pas encore dans les opérations
+            {due.length} échéance{due.length > 1 ? 's' : ''} passée{due.length > 1 ? 's' : ''} pas encore notée(s) dans l'historique
             ({due.slice(-3).map((d) => formatDate(d.date)).join(', ')}{due.length > 3 ? '…' : ''})
           </span>
           <button className="btn sm" onClick={() => {
@@ -64,6 +65,9 @@ export default function LoanDetail() {
         </div>
       )}
 
+      <details className="more-options" open={complet}>
+        <summary>Voir le détail (coût du crédit, calendrier des remboursements)</summary>
+        <div className="stack" style={{ gap: 24 }}>
       <Section title="Coût du crédit">
         <div className="card stack" style={{ gap: 8 }}>
           <div className="split"><span className="muted">Capital emprunté</span><span className="num">{f(loan.principal)}</span></div>
@@ -77,7 +81,7 @@ export default function LoanDetail() {
         </div>
       </Section>
 
-      <Section title="Échéancier">
+      <Section title="Calendrier des remboursements">
         <div className="card flush">
           {years.map(([y, list]) => {
             const isOpen = open === y || (open === null && y === Number(t.slice(0, 4)))
@@ -121,8 +125,10 @@ export default function LoanDetail() {
           })}
         </div>
       </Section>
-      {loan.notes && <p className="muted">{loan.notes}</p>}
-      <p className="faint" style={{ margin: 0 }}>Calcul théorique (prêt amortissable à mensualités constantes). Comparez avec le tableau d'amortissement de votre banque : en cas d'écart, ajustez le taux ou ajoutez un remboursement anticipé.</p>
+        </div>
+        {loan.notes && <p className="muted">{loan.notes}</p>}
+        <p className="faint" style={{ margin: 0 }}>Calcul théorique (prêt amortissable à mensualités constantes). Comparez avec le tableau d'amortissement de votre banque : en cas d'écart, ajustez le taux ou ajoutez un remboursement anticipé.</p>
+      </details>
     </Page>
   )
 }

@@ -280,3 +280,18 @@ table.data .faint { font-size: inherit; }
 .simple-bar .track { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
 .simple-bar .track span { display: block; height: 100%; border-radius: 999px; }
 .menu-group > summary { cursor: pointer; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); padding: var(--s2) 0; }
+
+/* ---------- Verrouillage ---------- */
+.lock { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s3); padding: var(--s5); }
+.lock h1 { margin: 0; font-size: 24px; }
+.lock p { margin: 0; color: var(--text-2); min-height: 22px; }
+.lock p.error { color: var(--expense); font-weight: 600; }
+.lock-dots { display: flex; gap: 16px; margin: var(--s3) 0; }
+.lock-dots span { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--text-2); }
+.lock-dots span.on { background: var(--primary); border-color: var(--primary); }
+.lock-pad { width: min(300px, 100%); }
+.lock-pad > span { display: grid; }
+.lock-pad > span button { width: 100%; }
+.more-options > summary { cursor: pointer; font-weight: 600; color: var(--primary); padding: var(--s2) 0; }
+.more-options[open] > summary { margin-bottom: var(--s3); }
+.more-options > .form, .more-options > .stack { gap: var(--s4); }

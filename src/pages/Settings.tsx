@@ -1,4 +1,6 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { biometricAvailable, checkPin, disableBiometric, disableLock, enableBiometric, hasBiometric, isLockEnabled, setPin } from '../lib/lock'
+import { PinPad } from '../ui/LockScreen'
 import { Download, RefreshCw, Upload } from 'lucide-react'
 import { useStore } from '../data/store'
 import { useMembers } from '../data/hooks'
@@ -10,6 +12,56 @@ import { archiveStart } from '../lib/forecast'
 import { Page, Section } from '../ui/Page'
 import { Segmented } from '../ui/Field'
 import { useToast } from '../ui/toast'
+
+function LockSettings() {
+  const toast = useToast((s) => s.show)
+  const [enabled, setEnabled] = useState(isLockEnabled())
+  const [bio, setBio] = useState(hasBiometric())
+  const [bioOk, setBioOk] = useState(false)
+  const [step, setStep] = useState<null | 'new' | 'confirm' | 'off'>(null)
+  const [first, setFirst] = useState('')
+  const [error, setError] = useState<string>()
+  useEffect(() => { void biometricAvailable().then(setBioOk) }, [])
+  if (step) {
+    return (
+      <div className="backdrop" style={{ alignItems: 'stretch', background: 'var(--bg)' }}>
+        <div style={{ width: '100%' }}>
+          <PinPad error={error}
+            title={step === 'new' ? 'Choisissez un code' : step === 'confirm' ? 'Confirmez le code' : 'Entrez votre code'}
+            subtitle={step === 'off' ? 'Pour retirer le verrouillage' : '4 chiffres'}
+            extra={<button type="button" onClick={() => { setStep(null); setError(undefined) }} style={{ fontSize: 14 }}>Annuler</button>}
+            onComplete={async (pin) => {
+              if (step === 'new') { setFirst(pin); setError(undefined); setStep('confirm') }
+              else if (step === 'confirm') {
+                if (pin !== first) { setError('Les deux codes sont différents'); setStep('new'); return }
+                await setPin(pin); setEnabled(true); setStep(null); toast('Verrouillage activé')
+              } else if (await checkPin(pin)) { disableLock(); setEnabled(false); setBio(false); setStep(null); toast('Verrouillage retiré') }
+              else setError('Code incorrect')
+            }} />
+        </div>
+      </div>
+    )
+  }
+  return (
+    <Section title="Sécurité">
+      <div className="card form">
+        <label className="check">
+          <input type="checkbox" checked={enabled} onChange={() => { setError(undefined); setStep(enabled ? 'off' : 'new') }} />
+          <span><strong>Verrouiller l'app par un code</strong><br /><span className="faint">Demandé à l'ouverture et après 2 minutes d'absence.</span></span>
+        </label>
+        {enabled && bioOk && (
+          <label className="check">
+            <input type="checkbox" checked={bio} onChange={async () => {
+              if (bio) { disableBiometric(); setBio(false) } else if (await enableBiometric()) { setBio(true); toast('Empreinte activée') } else toast('Empreinte non activée sur ce téléphone')
+            }} />
+            <span><strong>Déverrouiller avec l'empreinte ou le visage</strong><br /><span className="faint">Le code reste utilisable.</span></span>
+          </label>
+        )}
+        <span className="faint">Réglage propre à ce téléphone. Code oublié : il faudra effacer les données de l'app dans Chrome puis vous reconnecter au foyer (vos données partagées sont conservées).</span>
+      </div>
+    </Section>
+  )
+}
 
 export default function Settings() {
   const settings = useStore((s) => s.settings)
@@ -80,6 +132,8 @@ export default function Settings() {
           </div>
         </div>
       </Section>
+
+      <LockSettings />
 
       <Section title="Historique affiché">
         <div className="card form">

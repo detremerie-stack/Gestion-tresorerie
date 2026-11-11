@@ -26,6 +26,7 @@ export default function SubscriptionForm() {
   const nav = useNavigate()
   const existing = useStore((s) => (id ? s.data.subscriptions[id] : undefined))
   const upsert = useStore((s) => s.upsert)
+  const complet = useStore((s) => s.settings.mode === 'complet')
   const remove = useStore((s) => s.remove)
   const markPaid = useStore((s) => s.markSubscriptionPaid)
   const rates = useStore((s) => s.settings.rates)
@@ -118,7 +119,7 @@ export default function SubscriptionForm() {
       <form className="form" onSubmit={(e) => { e.preventDefault(); save() }}>
         <TextField label="Nom" value={name} onChange={setName} placeholder="Netflix, Vini, Viti Ora…" error={errors.name} autoFocus={!existing} />
         <TextField label="Formule" value={plan} onChange={setPlan} placeholder="Facultatif (ex. Premium, 2 To)" />
-        <Field label="Montant d'un prélèvement" error={errors.amount}
+        <Field label="Prix" error={errors.amount}
           hint={!Number.isNaN(value) && value > 0 && currency !== 'XPF' ? (
             <>{isFixedRate(currency) ? '= ' : '≈ '}{formatMoney(paymentXPF(draft, rates, 0))}{currency === 'EUR' ? ' (parité fixe)' : ' (taux du jour)'}{fee ? ` · avec ${fee} % de frais : ${formatMoney(paymentXPF(draft, rates, fee))}` : ''}</>
           ) : undefined}>
@@ -146,14 +147,9 @@ export default function SubscriptionForm() {
           {errors.every && <span className="error">{errors.every}</span>}
         </div>
 
-        <TextField label="Date d'un prélèvement" type="date" value={startDate} onChange={setStartDate}
-          hint="Le prochain, ou n'importe quel prélèvement passé : les suivants sont calculés à partir de cette date." />
+        <TextField label="Prochain paiement le" type="date" value={startDate} onChange={setStartDate}
+          hint="Les paiements suivants sont calculés tout seuls." />
 
-        <label className="check">
-          <input type="checkbox" checked={hasTrial} onChange={(e) => setHasTrial(e.target.checked)} />
-          <span>Période d'essai gratuite</span>
-        </label>
-        {hasTrial && <TextField label="Fin de l'essai (premier paiement)" type="date" value={trialEnd} onChange={setTrialEnd} error={errors.trial} hint="Pensez à résilier avant cette date si vous ne voulez pas continuer." />}
 
         {preview.length > 0 && (
           <div className="card stack" style={{ gap: 6 }}>
@@ -166,6 +162,14 @@ export default function SubscriptionForm() {
         <SelectField label="Prélevé sur" value={accountId} onChange={setAccountId}
           options={[{ value: '', label: 'Non précisé' }, ...accounts.map((a) => ({ value: a.id, label: `${a.name} (${a.currency})` }))]}
           hint={currency !== 'XPF' && fee === 0 ? 'Astuce : indiquez les frais de change de la carte dans Comptes pour voir le coût réel.' : undefined} />
+        <details className="more-options" open={complet}>
+          <summary>Plus d'options</summary>
+          <div className="form">
+        <label className="check">
+          <input type="checkbox" checked={hasTrial} onChange={(e) => setHasTrial(e.target.checked)} />
+          <span>Période d'essai gratuite</span>
+        </label>
+        {hasTrial && <TextField label="Fin de l'essai (premier paiement)" type="date" value={trialEnd} onChange={setTrialEnd} error={errors.trial} hint="Pensez à résilier avant cette date si vous ne voulez pas continuer." />}
         <SelectField label="Catégorie" value={categoryId} onChange={setCategoryId}
           options={categories.filter((c) => c.kind === 'expense').map((c) => ({ value: c.id, label: c.name }))} />
         <TagInput label="Étiquettes" value={subTags} onChange={setTags} suggestions={[...new Set([...tags, 'Streaming', 'Stockage', 'Utilitaire', 'Télécom', 'Jeux', 'Musique', 'VOD'])]} />
@@ -181,11 +185,13 @@ export default function SubscriptionForm() {
         <TextField label="Lien de gestion / résiliation" type="url" value={url} onChange={setUrl} placeholder="https://" />
         <Field label="Notes"><textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
         {url && existing && <a href={url} target="_blank" rel="noreferrer" className="btn">Ouvrir le site</a>}
+          </div>
+        </details>
 
         <div className="sticky-actions"><button className="btn primary" type="submit">Enregistrer</button></div>
       </form>
       {existing && (
-        <Section title="Raccourcis">
+        <Section title="Actions">
           <div className="btn-row">
             <button className="btn" onClick={() => { markPaid(existing, today()); toast("Paiement d'aujourd'hui enregistré") }}><Check size={16} />Payé aujourd'hui</button>
             {existing.status !== 'cancelled' && (

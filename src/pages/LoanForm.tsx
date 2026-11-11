@@ -19,6 +19,7 @@ export default function LoanForm() {
   const nav = useNavigate()
   const existing = useStore((s) => (id ? s.data.loans[id] : undefined))
   const upsert = useStore((s) => s.upsert)
+  const complet = useStore((s) => s.settings.mode === 'complet')
   const remove = useStore((s) => s.remove)
   const ensureCategory = useStore((s) => s.ensureLoanCategory)
   const currentMember = useStore((s) => s.settings.currentMember)
@@ -85,15 +86,15 @@ export default function LoanForm() {
   }
 
   return (
-    <Page title={existing ? 'Modifier le prêt' : 'Nouveau prêt'} back
+    <Page title={existing ? 'Modifier le crédit' : 'Nouveau crédit'} back
       actions={existing && <button className="icon-btn" aria-label="Supprimer" onClick={del}><Trash2 size={20} /></button>}>
       <form className="form" onSubmit={(e) => { e.preventDefault(); save() }}>
         <TextField label="Nom" value={name} onChange={setName} placeholder="Crédit maison, Voiture…" error={errors.name} autoFocus={!existing} />
-        <TextField label="Organisme prêteur" value={lender} onChange={setLender} placeholder="Banque de Tahiti, Socredo…" list="lenders" />
+        <TextField label="Banque" value={lender} onChange={setLender} placeholder="Banque de Tahiti, Socredo…" list="lenders" />
         <datalist id="lenders">{['Banque de Tahiti', 'Banque Socredo', 'Banque de Polynésie'].map((l) => <option key={l} value={l} />)}</datalist>
-        <Field label="Capital emprunté" error={errors.principal}>
+        <Field label="Montant emprunté" error={errors.principal}>
           <div className="input-group">
-            <input className="input big" inputMode="decimal" placeholder="0" value={principal} onChange={(e) => setPrincipal(e.target.value)} aria-label="Capital emprunté" />
+            <input className="input big" inputMode="decimal" placeholder="0" value={principal} onChange={(e) => setPrincipal(e.target.value)} aria-label="Montant emprunté" />
             <select className="input" aria-label="Devise" value={currency} onChange={(e) => setCurrency(e.target.value as Currency)}>
               {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
             </select>
@@ -111,17 +112,20 @@ export default function LoanForm() {
             <span className="muted" style={{ alignSelf: 'center' }}>mois</span>
           </div>
         </Field>
-        <TextField label="Date de la première échéance" type="date" value={startDate} onChange={setStartDate} hint="Les échéances suivantes tombent le même jour chaque mois. Si le prêt a déjà commencé, les échéances passées sont considérées comme réglées." />
+        <TextField label="Date du premier remboursement" type="date" value={startDate} onChange={setStartDate} hint="Les échéances suivantes tombent le même jour chaque mois. Si le prêt a déjà commencé, les échéances passées sont considérées comme réglées." />
 
         {draft && st && (
           <div className="card stack" style={{ gap: 6 }}>
             <div className="split"><span className="muted">Mensualité</span><strong className="num">{formatMoney(monthlyPayment(P, R, term, currency) + draft.insuranceMonthly, currency)}</strong></div>
             <div className="split"><span className="muted">Coût des intérêts</span><span className="num">{formatMoney(st.totalInterest, currency)}</span></div>
-            <div className="split"><span className="muted">Capital restant dû aujourd'hui</span><span className="num">{formatMoney(st.remaining, currency)}</span></div>
+            <div className="split"><span className="muted">Reste à rembourser aujourd'hui</span><span className="num">{formatMoney(st.remaining, currency)}</span></div>
             <div className="split"><span className="muted">Durée réelle</span><span className="num">{durationLabel(st.totalCount)}</span></div>
           </div>
         )}
 
+        <details className="more-options" open={complet}>
+          <summary>Plus d'options (remboursement anticipé, compte, notes…)</summary>
+          <div className="form">
         <div className="field">
           <span className="label">Remboursements anticipés</span>
           {extras.map((e, i) => (
@@ -144,6 +148,8 @@ export default function LoanForm() {
         </div>
         <div className="field"><span className="label">Couleur</span><Swatches value={color} onChange={setColor} colors={['#7C2D12', ...PALETTE]} /></div>
         <Field label="Notes"><textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="N° de dossier, conditions, garantie…" /></Field>
+          </div>
+        </details>
         <div className="sticky-actions"><button className="btn primary" type="submit">Enregistrer</button></div>
       </form>
     </Page>

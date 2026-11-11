@@ -23,6 +23,7 @@ export default function TransactionForm() {
   const nav = useNavigate()
   const existing = useStore((s) => (id ? s.data.transactions[id] : undefined))
   const upsert = useStore((s) => s.upsert)
+  const complet = useStore((s) => s.settings.mode === 'complet')
   const remove = useStore((s) => s.remove)
   const rates = useStore((s) => s.settings.rates)
   const currentMember = useStore((s) => s.settings.currentMember)
@@ -167,6 +168,9 @@ export default function TransactionForm() {
           </>
         )}
 
+        <details className="more-options" open={complet}>
+          <summary>Plus d'options (pour qui, voyage, note, ticket…)</summary>
+          <div className="form">
         {type === 'expense' && trips.length > 0 && (
           <div className="field">
             <label htmlFor="trip">Voyage</label>
@@ -196,6 +200,8 @@ export default function TransactionForm() {
         <Attachments value={attachments} onChange={setAttachments} />
         {existing?.reconciledAt && <p className="faint" style={{ margin: 0 }}>✓ Rapprochée avec le relevé bancaire{existing.rawLabel ? ` (« ${existing.rawLabel} »)` : ''}.</p>}
         {existing?.rawLabel && <p className="faint" style={{ margin: 0 }}>Libellé du relevé : {existing.rawLabel} {existing.rawLabel !== payee && <button type="button" className="btn sm" onClick={() => onPayee(cleanLabel(existing.rawLabel!))}>Utiliser</button>}</p>}
+          </div>
+        </details>
 
         <div className="sticky-actions">
           <button className="btn primary" type="submit">Enregistrer</button>

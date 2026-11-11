@@ -1,0 +1,53 @@
+import { useEffect, useState } from 'react'
+import { Delete, Fingerprint } from 'lucide-react'
+import { checkPin, hasBiometric, isLockEnabled, unlockWithBiometric } from '../lib/lock'
+
+/** Pavé de saisie d'un code à 4 chiffres. */
+export function PinPad({ title, subtitle, error, onComplete, extra }: { title: string; subtitle?: string; error?: string; onComplete: (pin: string) => void; extra?: React.ReactNode }) {
+  const [pin, setPin] = useState('')
+  useEffect(() => { if (error) setPin('') }, [error])
+  const press = (k: string) => {
+    if (k === '⌫') return setPin((p) => p.slice(0, -1))
+    if (pin.length >= 4) return
+    const next = pin + k
+    setPin(next)
+    if (next.length === 4) setTimeout(() => { onComplete(next); setPin('') }, 120)
+  }
+  return (
+    <div className="lock">
+      <img src="./icon.svg" alt="" width={64} height={64} style={{ borderRadius: 16 }} />
+      <h1>{title}</h1>
+      <p className={error ? 'error' : ''} role={error ? 'alert' : undefined}>{error ?? subtitle ?? ' '}</p>
+      <div className="lock-dots" aria-label={`${pin.length} chiffre(s) saisi(s) sur 4`}>{[0, 1, 2, 3].map((i) => <span key={i} className={i < pin.length ? 'on' : ''} />)}</div>
+      <div className="keypad lock-pad">
+        {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((k) => <button key={k} type="button" onClick={() => press(k)}>{k}</button>)}
+        <span>{extra}</span>
+        <button type="button" onClick={() => press('0')}>0</button>
+        <button type="button" aria-label="Effacer" onClick={() => press('⌫')}><Delete size={22} /></button>
+      </div>
+    </div>
+  )
+}
+
+/** Verrouille l'app au lancement et après 2 minutes en arrière-plan. */
+export function LockGate({ children }: { children: React.ReactNode }) {
+  const [locked, setLocked] = useState(isLockEnabled())
+  const [error, setError] = useState<string>()
+  useEffect(() => {
+    let hiddenAt = 0
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') hiddenAt = Date.now()
+      else if (hiddenAt && Date.now() - hiddenAt > 120_000 && isLockEnabled()) setLocked(true)
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [])
+  const bio = async () => { if (await unlockWithBiometric()) setLocked(false) }
+  useEffect(() => { if (locked && hasBiometric()) void bio() }, [locked])
+  if (!locked) return <>{children}</>
+  return (
+    <PinPad title="Fare Moni" subtitle="Entrez votre code" error={error}
+      onComplete={async (pin) => { if (await checkPin(pin)) { setError(undefined); setLocked(false) } else setError('Code incorrect') }}
+      extra={hasBiometric() ? <button type="button" aria-label="Déverrouiller avec l'empreinte" onClick={() => void bio()}><Fingerprint size={24} /></button> : null} />
+  )
+}
