@@ -96,7 +96,7 @@ export default function LoanForm() {
           <div className="input-group">
             <input className="input big" inputMode="decimal" placeholder="0" value={principal} onChange={(e) => setPrincipal(e.target.value)} aria-label="Montant emprunté" />
             <select className="input" aria-label="Devise" value={currency} onChange={(e) => setCurrency(e.target.value as Currency)}>
-              {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+              {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code === 'XPF' ? 'F' : c.code}</option>)}
             </select>
           </div>
         </Field>

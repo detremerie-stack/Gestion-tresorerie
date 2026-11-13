@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom'
 import { Check, ChevronRight, Settings } from 'lucide-react'
 import { useList, useMap, useStore } from '../data/store'
 import { useBalances } from '../data/hooks'
-import { useForecast } from '../data/useForecast'
+import { useEndOfMonth, useForecast } from '../data/useForecast'
 import { agenda, monthSummary, recentTransactions, upcomingItems } from '../data/selectors'
 import { useTripStatuses } from './Trips'
 import { addInterval, daysBetween, formatLongDate, formatShortDate, monthKey, monthLabel, split, today } from '../lib/dates'
-import { endOfMonth, perDay } from '../lib/forecast'
+import { perDay } from '../lib/forecast'
 import { isActive, monthlyCost } from '../lib/subscriptions'
 import { loanStatus } from '../lib/loans'
 import { effectiveFee, formatMoney, toXPF } from '../lib/money'
@@ -39,7 +39,7 @@ export default function Dashboard() {
   const nextTrip = useTripStatuses().find((r) => r.st.phase !== 'après')
 
   // 1. Il restera fin du mois (fonction unique, Q3)
-  const eom = endOfMonth(balances.total, fc.rows[0])
+  const eom = useEndOfMonth()
   const daily = perDay(eom.remaining, t)
 
   // 2. À confirmer et à payer d'ici 7 jours
@@ -106,13 +106,14 @@ export default function Dashboard() {
         </div>
         <div className="banner-main">
           <span className="banner-label">Il restera fin {monthName}</span>
-          <Money className="banner-amount" value={eom.remaining} approx={balances.approx} />
+          <Money className="banner-amount" value={eom.remaining} approx={eom.approx} />
+          <span className="banner-perday">une fois payé ce qui est prévu (abonnements, crédits, factures)</span>
           {eom.remaining < 0 && <span className="banner-alert">Attention : le compte passerait à découvert</span>}
           {daily && <span className="banner-perday">soit environ {formatMoney(daily.amount)} par jour jusqu'au {lastDay}</span>}
         </div>
         <div className="banner-today">
           <span>Aujourd'hui sur nos comptes</span>
-          <Money className="num" value={eom.today} approx={balances.approx} />
+          <Money className="num" value={eom.today} approx={eom.approx} />
         </div>
         {detail.length > 0 && <span className="banner-detail">{detail.flatMap((d, i) => (i ? [<span key={`s${i}`}> · </span>, d] : [d]))}</span>}
       </section>
@@ -226,7 +227,7 @@ export default function Dashboard() {
       {complet && (
         <Section title="En bref" className="home-bref">
           <div className="tiles">
-            <Link to="/previsionnel" className="tile"><span className="tile-label">Fin {monthLabel(fc.rows[1].month).split(' ')[0]}, prévu</span><Money className={`tile-value ${fc.rows[1].endBalance < 0 ? 'danger-text' : ''}`} value={fc.rows[1].endBalance} approx /></Link>
+            <Link to="/previsionnel" className="tile"><span className="tile-label">Fin {monthLabel(fc.rows[1].month).split(' ')[0]}, si vous dépensez comme d'habitude</span><Money className={`tile-value ${fc.rows[1].endBalance < 0 ? 'danger-text' : ''}`} value={fc.rows[1].endBalance} approx /></Link>
             <Link to="/abonnements" className="tile"><span className="tile-label">Abonnements</span><Money className="tile-value" value={subsMonthly} approx /><span className="tile-sub">par mois · {activeSubs} actifs</span></Link>
             {loanRows.length > 0 && <Link to="/prets" className="tile"><span className="tile-label">Crédits</span><Money className="tile-value" value={debt} /><span className="tile-sub">reste à rembourser · {formatMoney(loanMonthly)}/mois</span></Link>}
             <Link to="/comptes" className="tile"><span className="tile-label">Comptes</span><strong className="tile-value">{balances.rows.length}</strong><span className="tile-sub">voir les soldes</span></Link>

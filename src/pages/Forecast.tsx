@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, Plus, Sparkles } from 'lucide-react'
 import { useList, useMap, useStore } from '../data/store'
 import { useBalances, useMemberName } from '../data/hooks'
-import { useForecast } from '../data/useForecast'
+import { useEndOfMonth, useForecast } from '../data/useForecast'
 import type { Planned } from '../data/types'
 import { addInterval, formatDate, monthLabel, split, today } from '../lib/dates'
 import { detectRecurring, plannedOccurrences } from '../lib/forecast'
@@ -35,6 +35,8 @@ export default function Forecast() {
   const [varDraft, setVarDraft] = useState('')
 
   const { rows, estimated, variable } = useForecast(Number(horizon))
+  // Même chiffre et même libellé que l'accueil (fonction unique `endOfMonth`), puis le lien avec la projection.
+  const eom = useEndOfMonth()
 
   const low = rows.reduce((m, r) => (r.endBalance < m.endBalance ? r : m), rows[0])
   const end = rows[rows.length - 1]
@@ -58,11 +60,17 @@ export default function Forecast() {
 
   return (
     <Page title="Les mois à venir" back wide>
+      <div className="card stack eom-card" aria-label="Il restera fin du mois">
+        <span className="label">Il restera fin {monthLabel(eom.month).split(' ')[0]}</span>
+        <Money className="big-num" value={eom.remaining} approx={eom.approx} />
+        <span className="muted">une fois payé ce qui est prévu (abonnements, crédits, factures)</span>
+        <span>Si vous dépensez comme d'habitude d'ici là (environ {formatMoney(eom.usualSpending)}) : <strong><Money value={eom.usual} approx /></strong></span>
+      </div>
       <Segmented label="Horizon" value={horizon} onChange={setHorizon} options={[{ value: '3', label: '3 mois' }, { value: '6', label: '6 mois' }, { value: '12', label: '12 mois' }]} />
       <div className="card kpis">
         <div className="kpi"><span className="label">Aujourd'hui</span><Money className="value" value={balances.total} approx={balances.approx} /></div>
-        <div className="kpi"><span className="label">Fin {monthLabel(end.month, true)}</span><Money className={`value ${end.endBalance < 0 ? 'expense' : ''}`} value={end.endBalance} approx /></div>
-        <div className="kpi"><span className="label">Au plus bas d'ici {monthLabel(end.month).split(' ')[0]}</span><Money className={`value ${low.endBalance < 0 ? 'expense' : ''}`} value={low.endBalance} approx /><span className="faint" style={{ textTransform: 'capitalize' }}>fin {monthLabel(low.month)}</span></div>
+        <div className="kpi"><span className="label">Fin {monthLabel(end.month, true)}, si vous dépensez comme d'habitude</span><Money className={`value ${end.endBalance < 0 ? 'expense' : ''}`} value={end.endBalance} approx /></div>
+        <div className="kpi"><span className="label">Au plus bas d'ici {monthLabel(end.month).split(' ')[0]}</span><Money className={`value ${low.endBalance < 0 ? 'expense' : ''}`} value={low.endBalance} approx /><span className="faint">fin {monthLabel(low.month)}, si vous dépensez comme d'habitude</span></div>
         <div className="kpi"><span className="label">Dépenses du quotidien / mois</span>
           {editVar ? (
             <span className="input-group">
@@ -81,7 +89,7 @@ export default function Forecast() {
         <div className="callout warn"><AlertTriangle size={18} /><span>Le solde passerait <strong>sous zéro</strong> fin {monthLabel(low.month)} ({formatMoney(low.endBalance)}). Réduisez les dépenses ou décalez une dépense prévue.</span></div>
       )}
 
-      <Section title="Prévu à la fin de chaque mois, dépenses du quotidien comprises">
+      <Section title="Fin de chaque mois, si vous dépensez comme d'habitude">
         <div className="card"><BalanceBars data={rows.map((r) => ({ month: r.month, value: r.endBalance }))} /></div>
       </Section>
 
@@ -90,13 +98,13 @@ export default function Forecast() {
       <Section title="Détail par mois">
         <div className="card flush table-wrap">
           <table className="data">
-            <thead><tr><th>Mois</th><th className="r">Entrées</th><th className="r">Sorties</th><th className="r">À la fin du mois</th></tr></thead>
+            <thead><tr><th>Mois</th><th className="r">Entrées</th><th className="r">Sorties</th><th className="r">Fin de mois, dépenses habituelles comprises</th></tr></thead>
             <tbody>
               {rows.map((r) => {
                 const out = r.subscriptions + r.loans + r.planned + r.trips + r.variable
                 return (
                   <tr key={r.month}>
-                    <td style={{ textTransform: 'capitalize' }}>
+                    <td>
                       {monthLabel(r.month, true)}
                       <div className="faint" style={{ fontSize: 12 }}>
                         {[r.subscriptions && `abo. ${formatMoney(r.subscriptions)}`, r.loans && `prêts ${formatMoney(r.loans)}`, r.planned && `prévu ${formatMoney(r.planned)}`, r.trips && `voyages ${formatMoney(r.trips)}`, r.variable && `courant ${formatMoney(r.variable)}`].filter(Boolean).join(' · ')}

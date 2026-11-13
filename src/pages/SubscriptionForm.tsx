@@ -121,12 +121,12 @@ export default function SubscriptionForm() {
         <TextField label="Formule" value={plan} onChange={setPlan} placeholder="Facultatif (ex. Premium, 2 To)" />
         <Field label="Prix" error={errors.amount}
           hint={!Number.isNaN(value) && value > 0 && currency !== 'XPF' ? (
-            <>{isFixedRate(currency) ? '= ' : '≈ '}{formatMoney(paymentXPF(draft, rates, 0))}{currency === 'EUR' ? ' (parité fixe)' : ' (taux du jour)'}{fee ? ` · avec ${fee} % de frais : ${formatMoney(paymentXPF(draft, rates, fee))}` : ''}</>
+            <>{isFixedRate(currency) ? '= ' : '≈ '}{formatMoney(paymentXPF(draft, rates, 0))}{currency === 'EUR' ? ' (parité fixe)' : ' (taux du jour)'}{fee ? ` · avec ${String(fee).replace('.', ',')} % de frais : ${formatMoney(paymentXPF(draft, rates, fee))}` : ''}</>
           ) : undefined}>
           <div className="input-group">
             <input className="input big" inputMode="decimal" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} aria-label="Montant" />
             <select className="input" aria-label="Devise" value={currency} onChange={(e) => setCurrency(e.target.value as Currency)}>
-              {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+              {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code === 'XPF' ? 'F' : c.code}</option>)}
             </select>
           </div>
         </Field>
@@ -200,7 +200,7 @@ export default function SubscriptionForm() {
               </button>
             )}
           </div>
-          <p className="faint" style={{ margin: 0 }}>{exact ? 'Montant exact en XPF.' : 'Montant XPF estimé (« ≈ ») : taux variable ou frais de change.'} Prochain : {formatMoney(paymentXPF(draft, rates, fee))}.</p>
+          <p className="faint" style={{ margin: 0 }}>{exact ? 'Montant exact en F.' : 'Montant en F estimé (« ≈ ») : taux variable ou frais de change.'} Prochain : {formatMoney(paymentXPF(draft, rates, fee))}.</p>
         </Section>
       )}
     </Page>

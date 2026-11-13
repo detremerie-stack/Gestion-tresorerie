@@ -48,7 +48,7 @@ export default function Reports() {
         <div className="kpi"><span className="label">Revenus</span><Money className="value" value={tot.income} /></div>
         <div className="kpi"><span className="label">Dépenses</span><Money className="value" value={tot.expense} /></div>
         <div className="kpi"><span className="label">Différence</span><Money className="value" value={tot.net} sign tone /></div>
-        <div className="kpi"><span className="label">Mis de côté (%)</span><span className="value num">{savingRate == null ? '—' : `${savingRate} %`}</span></div>
+        {savingRate != null && <p className="kpi saving-line" style={{ gridColumn: '1 / -1', margin: 0 }}>{savingRate >= 0 ? `Vous avez mis de côté ${savingRate} % de vos revenus.` : 'Vous avez dépensé plus que vos revenus.'}</p>}
         {n > 1 && <div className="kpi"><span className="label">Dépenses / mois</span><Money className="value" value={Math.round(tot.expense / n)} /></div>}
       </div>
 

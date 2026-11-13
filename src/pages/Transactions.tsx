@@ -122,7 +122,7 @@ export default function Transactions() {
             return (
               <div key={date}>
                 <div className="day-head">
-                  <span style={{ textTransform: 'capitalize' }}>{formatLongDate(date)}</span>
+                  <span>{formatLongDate(date)}</span>
                   <Money value={dayNet} sign />
                 </div>
                 <ul className="list">

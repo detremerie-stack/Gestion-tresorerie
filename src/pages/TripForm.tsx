@@ -68,7 +68,7 @@ export default function TripForm() {
               <input className="input" value={l.label} onChange={(e) => setLine(i, { label: e.target.value })} aria-label="Poste" placeholder="Poste" />
               <input className="input" inputMode="decimal" value={l.amount} onChange={(e) => setLine(i, { amount: e.target.value })} aria-label="Montant" placeholder="0" style={{ maxWidth: 110 }} />
               <select className="input" value={l.currency} onChange={(e) => setLine(i, { currency: e.target.value as Currency })} aria-label="Devise">
-                {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code === 'XPF' ? 'F' : c.code}</option>)}
               </select>
               <button type="button" className="icon-btn" aria-label="Retirer" onClick={() => setLines(lines.filter((_, j) => j !== i))}><X size={18} /></button>
             </div>

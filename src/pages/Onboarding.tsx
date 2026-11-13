@@ -23,7 +23,7 @@ export default function Onboarding() {
 
       <div className="card form">
         <div className="field">
-          <span className="label">Qui utilise ce téléphone ?</span>
+          <span className="label">Qui utilise cet appareil ?</span>
           <Segmented label="Membre" value={member} onChange={setMember} options={members.map((m) => ({ value: m.id, label: m.name }))} />
         </div>
         <button className="btn primary block" onClick={() => complete({ member })}>

@@ -33,7 +33,7 @@ export default function Documents() {
           <span>Photographiez un ticket depuis « Dépense rapide » ou ajoutez une facture dans une opération.</span>
         </Empty>
       ) : months.map(([m, list]) => (
-        <Section key={m} title={<span style={{ textTransform: 'capitalize' }}>{monthLabel(m)}</span>}>
+        <Section key={m} title={monthLabel(m)}>
           <div className="card flush"><ul className="list">
             {list.map((t) => (
               <li key={t.id}><div className="row" style={{ alignItems: 'flex-start' }}>

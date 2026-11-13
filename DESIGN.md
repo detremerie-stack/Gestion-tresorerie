@@ -63,8 +63,8 @@ Importer un relevé | Voyages, Crédits, Comptes, Limites de dépenses, Tickets 
 Bouton « + Nouvelle dépense » (touche `N`) en haut. **Menu téléphone** : Le plus utile · Notre argent · Réglages.
 
 ## Composants
-- **Accueil** : 1) « Il restera fin {mois} » (fonction unique `endOfMonth`) + « par jour » + « Aujourd'hui sur nos
-  comptes » ; 2) À confirmer et à payer d'ici 7 jours ; 3) Ce mois-ci ; 4) Dernières opérations (3 téléphone, 5 PC).
+- **Accueil** : 1) « Il restera fin {mois} » (fonction unique `endOfMonth`) + « une fois payé ce qui est prévu… »
+  + « par jour » + « Aujourd'hui sur nos comptes » ; 2) À confirmer et à payer d'ici 7 jours ; 3) Ce mois-ci ; 4) Dernières opérations (3 téléphone, 5 PC).
   Mode Complet : Limites du mois, En bref.
 - **(+)** = Dépense rapide dans les deux modes ; « Autre chose ? » ouvre le choix Revenu / Entre nos comptes /
   Dépense détaillée / Abonnement / Voyage.
@@ -80,5 +80,9 @@ Bouton « + Nouvelle dépense » (touche `N`) en haut. **Menu téléphone** : Le
 ## Mots
 Écran = libellé du menu. « Solde » pour le solde d'un compte ; « Débit / Crédit / Libellé » sur le relevé imprimé
 et l'export CSV ; ailleurs « Entrées / Sorties », « Entre nos comptes », « mensualité » (crédits), « Partage »,
-« Réglages ». Trois notions distinctes : **Il restera fin {mois}** (accueil, sans les dépenses du quotidien),
-**Au plus bas d'ici {mois}** et **Fin {mois suivant}, prévu** (avec les dépenses du quotidien estimées).
+« Réglages ». Mois en minuscules (« vendredi 13 novembre »), décimales avec une virgule (« 2,8 % »), taux à 2 décimales.
+**Fin de mois — un seul chiffre porte « Il restera fin {mois} »**, identique sur l'accueil et en tête de « Les mois à venir »
+(fonction `endOfMonth`, hook `useEndOfMonth`), avec dessous « une fois payé ce qui est prévu (abonnements, crédits, factures) ».
+Le chiffre qui déduit aussi les dépenses du quotidien estimées porte toujours la mention **« si vous dépensez comme
+d'habitude »** (« Si vous dépensez comme d'habitude d'ici là (environ X F) : Y F », « Fin décembre, si vous dépensez comme
+d'habitude », « Au plus bas d'ici {mois} »). Jamais « fin {mois} » tout seul pour ce second chiffre.

@@ -210,7 +210,7 @@ export default function QuickExpense() {
       {currency !== 'XPF' && value > 0 && account && (
         <p className="faint" style={{ margin: 0 }}>
           ≈ {formatMoney(toXPF(value, currency, rates) * (1 + effectiveFee(currency, account.currency, account.fxFeePct) / 100))}
-          {isFixedRate(currency) ? ' (parité fixe)' : ` · 1 ${currency} = ${String(rateOf(currency, rates)).replace('.', ',')} F`}
+          {isFixedRate(currency) ? ' (parité fixe)' : ` · 1 ${currency} = ${rateOf(currency, rates).toFixed(2).replace('.', ',')} F`}
           {effectiveFee(currency, account.currency, account.fxFeePct) ? ` + ${String(effectiveFee(currency, account.currency, account.fxFeePct)).replace('.', ',')} % de frais` : ''}
         </p>
       )}

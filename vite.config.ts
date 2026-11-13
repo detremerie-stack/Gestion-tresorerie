@@ -99,5 +99,6 @@ export default defineConfig({
       },
     }),
   ],
-  test: { environment: 'node' },
+  // zustand transformé par vitest : le test de rendu (finDeMois.test.tsx) peut lui faire lire l'état chargé.
+  test: { environment: 'node', server: { deps: { inline: ['zustand'] } } },
 })

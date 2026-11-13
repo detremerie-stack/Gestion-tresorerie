@@ -21,7 +21,7 @@ export default function Accounts() {
       <div className="card hero">
         <span className="label">Total en francs Pacifique</span>
         <Money className="value" value={total} approx={approx} />
-        {debt > 0 && <span className="faint">Crédits : <Money value={-debt} /> · patrimoine net <Money value={total - debt} /></span>}
+        {debt > 0 && <span className="faint">Crédits : <Money value={-debt} /> · tout ce que nous avons, moins ce que nous devons : <Money value={total - debt} /></span>}
       </div>
       <div className="card flush">
         <ul className="list">

@@ -154,11 +154,11 @@ export default function Import() {
           options={accounts.map((a) => ({ value: a.id, label: `${a.name} (${a.currency})` }))} />
         {account && HELP[account.institution] && <div className="callout"><Info size={18} /><span>{HELP[account.institution]}</span></div>}
         <label className="btn primary block" style={{ cursor: 'pointer' }}>
-          <FileUp size={18} />{fileName || 'Choisir un fichier CSV ou OFX'}
+          <FileUp size={18} />{fileName || 'Choisir le fichier de la banque'}
           <input type="file" accept=".csv,.txt,.ofx,.qfx,text/csv" className="sr-only" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
         </label>
         {error && <p className="error" role="alert" style={{ color: 'var(--expense)', margin: 0 }}>{error}</p>}
-        <p className="faint" style={{ margin: 0 }}>Le fichier est lu sur cet appareil ; rien n'est envoyé ailleurs (sauf la synchronisation de votre foyer). PDF : non pris en charge pour l'instant, exportez en CSV.</p>
+        <p className="faint" style={{ margin: 0 }}>Le fichier est lu sur cet appareil ; rien n'est envoyé ailleurs (sauf la synchronisation de votre foyer). Formats : CSV / OFX (PDF non pris en charge, exportez en CSV).</p>
       </div>
 
       {mapping && rows && (
@@ -180,10 +180,15 @@ export default function Import() {
             )}
             <div className="grid-2">
               <SelectField label="Format de date" value={mapping.dateOrder} onChange={(v) => setM({ dateOrder: v })} options={[{ value: 'DMY', label: 'JJ/MM/AAAA' }, { value: 'MDY', label: 'MM/JJ/AAAA (US)' }, { value: 'YMD', label: 'AAAA-MM-JJ' }]} />
-              <SelectField label="Lignes à ignorer" value={String(mapping.skipRows)} onChange={(v) => setM({ skipRows: Number(v) })} options={Array.from({ length: 11 }, (_, i) => ({ value: String(i), label: String(i) }))} />
             </div>
-            <label className="check"><input type="checkbox" checked={mapping.hasHeader} onChange={(e) => setM({ hasHeader: e.target.checked })} />La première ligne est un en-tête</label>
-            <label className="check"><input type="checkbox" checked={mapping.invert} onChange={(e) => setM({ invert: e.target.checked })} />Inverser les signes (dépenses positives dans le fichier)</label>
+            <details className="more-options">
+              <summary>Réglages du fichier (rarement utile)</summary>
+              <div className="form">
+                <SelectField label="Lignes à ignorer" value={String(mapping.skipRows)} onChange={(v) => setM({ skipRows: Number(v) })} options={Array.from({ length: 11 }, (_, i) => ({ value: String(i), label: String(i) }))} />
+                <label className="check"><input type="checkbox" checked={mapping.hasHeader} onChange={(e) => setM({ hasHeader: e.target.checked })} />La première ligne est un en-tête</label>
+                <label className="check"><input type="checkbox" checked={mapping.invert} onChange={(e) => setM({ invert: e.target.checked })} />Inverser les signes (dépenses positives dans le fichier)</label>
+              </div>
+            </details>
           </div>
         </Section>
       )}

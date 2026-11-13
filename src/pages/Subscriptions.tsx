@@ -173,7 +173,7 @@ function Upcoming({ subs, today: t, fee }: { subs: Subscription[]; today: string
       {months.map(([m, list]) => {
         const total = list.reduce((s, i) => s + paymentXPF(i.sub, rates, fee(i.sub)), 0)
         return (
-          <Section key={m} title={<span style={{ textTransform: 'capitalize' }}>{monthLabel(m)}</span>} action={<span className="num" style={{ color: 'var(--text)' }}><Money value={total} approx={list.some((i) => !isExact(i.sub, fee(i.sub)))} /></span>}>
+          <Section key={m} title={monthLabel(m)} action={<span className="num" style={{ color: 'var(--text)' }}><Money value={total} approx={list.some((i) => !isExact(i.sub, fee(i.sub)))} /></span>}>
             <div className="card flush"><ul className="list">
               {list.map(({ sub, date }) => {
                 const isToday = date === t

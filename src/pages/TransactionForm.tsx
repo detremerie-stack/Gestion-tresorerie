@@ -144,7 +144,7 @@ function TransactionForm() {
             <input className="input big" inputMode="decimal" autoFocus={!existing} placeholder="0" value={amount} aria-label="Montant"
               onChange={(e) => { setAmount(e.target.value); setError(undefined) }} />
             <select className="input" aria-label="Devise" value={currency} onChange={(e) => { setCurrency(e.target.value as Currency); setDebitedTouched(false) }}>
-              {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+              {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code === 'XPF' ? 'F' : c.code}</option>)}
             </select>
           </div>
         </Field>
@@ -159,8 +159,8 @@ function TransactionForm() {
           <TextField label={`Montant débité sur le compte (${account!.currency})`} inputMode="decimal" value={debited}
             onChange={(v) => { setDebited(v); setDebitedTouched(true) }}
             hint={currency === 'EUR' && account!.currency === 'XPF'
-              ? `Parité fixe : ${formatMoney(value || 0, 'EUR')} = ${formatMoney(toXPF(value || 0, 'EUR', rates))}${fee ? ` + ${fee} % de frais` : ''}. Corrigez avec le montant réel du relevé.`
-              : `Estimation au taux du jour${fee ? ` + ${fee} % de frais` : ''}. Corrigez avec le montant réel du relevé.`} />
+              ? `Parité fixe : ${formatMoney(value || 0, 'EUR')} = ${formatMoney(toXPF(value || 0, 'EUR', rates))}${fee ? ` + ${String(fee).replace('.', ',')} % de frais` : ''}. Corrigez avec le montant réel du relevé.`
+              : `Estimation au taux du jour${fee ? ` + ${String(fee).replace('.', ',')} % de frais` : ''}. Corrigez avec le montant réel du relevé.`} />
         )}
 
         {type === 'transfer' ? (

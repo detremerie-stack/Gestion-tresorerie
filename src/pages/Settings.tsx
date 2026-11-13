@@ -61,7 +61,6 @@ function LockSettings() {
           </label>
         )}
         <span className="faint">Réglage propre à ce téléphone. Code oublié : il faudra effacer les données de l'app dans Chrome puis vous reconnecter au foyer (vos données partagées sont conservées).</span>
-        <WipeButton />
       </div>
     </Section>
   )
@@ -160,7 +159,7 @@ export default function Settings() {
 
       <Section title="Taux de change">
         <div className="card form">
-          <div className="split"><span>1 EUR</span><strong className="num">{EUR_XPF.toFixed(5).replace('.', ',')} F</strong></div>
+          <div className="split"><span>1 EUR</span><strong className="num">{EUR_XPF.toFixed(2).replace('.', ',')} F</strong></div>
           <p className="faint" style={{ margin: 0 }}>Parité fixe garantie : 1 000 F CFP = 8,38 €. Aucune approximation pour l'euro.</p>
           {editable.map((c) => (
             <div key={c.code} className="split">
@@ -198,6 +197,14 @@ export default function Settings() {
               <li key={to}><Link to={to} className="row" style={{ color: 'inherit' }}><I size={20} aria-hidden="true" /><span className="main"><span className="title">{label}</span></span><ChevronRight size={18} className="faint" /></Link></li>
             ))}
           </ul>
+        </div>
+      </Section>
+
+      {/* Geste destructeur : tout en bas, à part, loin du code (décision de publication § 2.1). */}
+      <Section title="Quitter cet appareil">
+        <div className="card form">
+          <p className="faint" style={{ margin: 0 }}>Avant de rendre ou de partager cet appareil (PC partagé, ancien téléphone).</p>
+          <WipeButton />
         </div>
       </Section>
     </Page>

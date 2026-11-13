@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useList, useMap, useStore } from './store'
 import { useBalances } from './hooks'
 import { today } from '../lib/dates'
-import { estimateVariable, forecast } from '../lib/forecast'
+import { endOfMonth, estimateVariable, forecast } from '../lib/forecast'
 import { toXPF } from '../lib/money'
 
 /** Prévisionnel sur `months` mois, partagé par l'accueil et la page Prévisionnel. */
@@ -31,4 +31,14 @@ export function useForecast(months: number) {
     variableMonthly: variable,
   }), [t, months, balances.total, rates, accounts, subs, loans, planned, trips, txs, variable])
   return { rows, estimated, variable, override, balances }
+}
+
+/**
+ * « Il restera fin {mois} » : le même chiffre sur l'accueil et sur « Les mois à venir » (même fonction `endOfMonth`).
+ * `usual` = où l'on arrive si l'on dépense comme d'habitude d'ici la fin du mois (dépenses du quotidien estimées).
+ */
+export function useEndOfMonth() {
+  const { rows, balances } = useForecast(1)
+  const eom = endOfMonth(balances.total, rows[0])
+  return { ...eom, approx: balances.approx, usual: rows[0].endBalance, usualSpending: eom.remaining - rows[0].endBalance, month: rows[0].month }
 }

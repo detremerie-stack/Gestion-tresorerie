@@ -107,7 +107,7 @@ export function MonthColumns({ data }: { data: { month: string; income: number; 
       </svg>
       {h && hover != null && (
         <div className="tip" style={{ left: `${((padL + slot * hover + slot / 2) / W) * 100}%`, top: 24 }}>
-          <strong style={{ textTransform: 'capitalize' }}>{monthLabel(h.month)}</strong>
+          <strong>{monthLabel(h.month)}</strong>
           <div>Revenus : {formatMoney(h.income)}</div>
           <div>Dépenses : {formatMoney(h.expense)}</div>
           <div>Solde : {formatMoney(h.income - h.expense, 'XPF', { sign: true })}</div>
@@ -158,7 +158,7 @@ export function BalanceBars({ data }: { data: { month: string; value: number }[]
   const h = hover != null ? data[hover] : null
   return (
     <div className="colchart" ref={box}>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Solde prévu en fin de mois" onMouseLeave={() => setHover(null)}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Fin de chaque mois, si vous dépensez comme d’habitude" onMouseLeave={() => setHover(null)}>
         <g className="grid"><line x1={0} x2={W} y1={y(0)} y2={y(0)} /></g>
         {data.map((d, i) => {
           const cx = slot * i + slot / 2
@@ -177,12 +177,12 @@ export function BalanceBars({ data }: { data: { month: string; value: number }[]
       </svg>
       {h && hover != null && (
         <div className="tip" style={{ left: `${((slot * hover + slot / 2) / W) * 100}%`, top: 16 }}>
-          <strong style={{ textTransform: 'capitalize' }}>Fin {monthLabel(h.month)}</strong>
+          <strong>Fin {monthLabel(h.month)}, si vous dépensez comme d'habitude</strong>
           <div>{formatMoney(h.value)}{h.value < 0 ? ' · négatif' : ''}</div>
         </div>
       )}
       <table className="sr-only">
-        <caption>Solde prévu en fin de mois</caption>
+        <caption>Fin de chaque mois, si vous dépensez comme d’habitude</caption>
         <tbody>{data.map((d) => <tr key={d.month}><td>{monthLabel(d.month)}</td><td>{formatMoney(d.value)}</td></tr>)}</tbody>
       </table>
     </div>
