@@ -27,8 +27,10 @@ export async function flushUploads(): Promise<void> {
   for (const id of (await keys(pending)) as string[]) {
     const blob = await get<Blob>(id, store)
     if (!blob) { await del(id, pending); continue }
-    if (await uploadFile(id, blob, id)) await del(id, pending)
-    else if (blob.size > 900_000) await del(id, pending) // trop gros : reste sur ce téléphone
+    // Un envoi refusé (règles, réseau) ne bloque pas les suivants.
+    const ok = await uploadFile(id, blob, id).catch(() => false)
+    if (ok) await del(id, pending)
+    else if (blob.size > 900_000 || safeType(blob.type) === 'application/octet-stream') await del(id, pending) // reste sur cet appareil
   }
 }
 
@@ -75,7 +77,10 @@ export async function deleteAttachment(id: string) {
 /** OCR du ticket dans le navigateur (Tesseract, chargé à la demande ; nécessite le réseau la 1re fois). */
 export async function ocrImage(file: Blob, onProgress?: (p: number) => void): Promise<string> {
   const { createWorker } = await import('tesseract.js')
-  const worker = await createWorker(['fra', 'eng'], 1, { logger: (m: { status: string; progress: number }) => m.status === 'recognizing text' && onProgress?.(m.progress) })
+  // Code exécutable servi depuis notre site (Q8) ; en développement, chemins par défaut de la bibliothèque.
+  const base = new URL('./tesseract/', location.href).href
+  const paths = import.meta.env.PROD ? { workerPath: `${base}worker.min.js`, corePath: base, workerBlobURL: false } : {}
+  const worker = await createWorker(['fra', 'eng'], 1, { ...paths, logger: (m: { status: string; progress: number }) => m.status === 'recognizing text' && onProgress?.(m.progress) })
   try {
     const { data } = await worker.recognize(file)
     return data.text

@@ -5,6 +5,8 @@ import { useList, useStore } from '../data/store'
 import { COMMON, useAccounts, useAllTags, useCategories, useMembers } from '../data/hooks'
 import type { Transaction, TxType } from '../data/types'
 import { today } from '../lib/dates'
+import { entryWarnings } from '../lib/checks'
+import { isValidAmount } from '../lib/quick'
 import { CURRENCIES, effectiveFee, formatMoney, fromXPF, parseAmount, roundTo, toXPF, type Currency } from '../lib/money'
 import { cleanLabel, matchRule } from '../lib/rules'
 import { Page } from '../ui/Page'
@@ -17,7 +19,14 @@ import { useToast } from '../ui/toast'
 
 const fmtInput = (n: number | undefined, cur: Currency) => (n == null || Number.isNaN(n) ? '' : String(roundTo(n, cur)).replace('.', ','))
 
-export default function TransactionForm() {
+/** Recette R4 : un nouveau `?type=` recrée le formulaire (sinon il gardait l'ancien type). */
+export default function TransactionFormRoute() {
+  const [params] = useSearchParams()
+  const { id } = useParams()
+  return <TransactionForm key={`${id ?? 'nouvelle'}:${params.get('type') ?? ''}`} />
+}
+
+function TransactionForm() {
   const { id } = useParams()
   const [params] = useSearchParams()
   const nav = useNavigate()
@@ -83,12 +92,18 @@ export default function TransactionForm() {
 
   const save = () => {
     if (Number.isNaN(value) || value <= 0) return setError('Indiquez un montant supérieur à 0.')
+    if (!isValidAmount(value)) return setError('Montant trop grand : 9 chiffres au plus avant la virgule.')
     if (!accountId) return setError('Choisissez un compte.')
     if (type === 'transfer' && (!toAccountId || toAccountId === accountId)) return setError('Choisissez un compte de destination différent.')
     const debit = foreign ? parseAmount(debited) : value
     if (Number.isNaN(debit) || debit <= 0) return setError('Indiquez le montant débité sur le compte.')
+    // Recette R6 : confirmation si le montant est inhabituel ou la date dans le futur (seulement si on les a saisis ou changés).
+    if (!existing || (existing.originalAmount ?? existing.amount) !== value || existing.date !== date) {
+      const warn = entryWarnings({ amount: value, currency, date, today: today(), rates })
+      if (warn.length && !confirm(`${warn.join('\n')}\nEnregistrer quand même ?`)) return
+    }
     const rec: Partial<Transaction> = {
-      ...(existing ?? {}),
+      ...existing,
       id: existing?.id,
       type,
       date,
@@ -119,10 +134,10 @@ export default function TransactionForm() {
   }
 
   return (
-    <Page title={existing ? 'Modifier' : type === 'expense' ? 'Nouvelle dépense' : type === 'income' ? 'Nouveau revenu' : 'Nouveau virement'} back
+    <Page title={existing ? 'Modifier' : type === 'expense' ? 'Nouvelle dépense' : type === 'income' ? 'Nouveau revenu' : 'Entre nos comptes'} back
       actions={existing && <button className="icon-btn" aria-label="Supprimer" onClick={del}><Trash2 size={20} /></button>}>
       <form className="form" onSubmit={(e) => { e.preventDefault(); save() }}>
-        <Segmented label="Type" value={type} onChange={setType} options={[{ value: 'expense', label: 'Dépense' }, { value: 'income', label: 'Revenu' }, { value: 'transfer', label: 'Virement' }]} />
+        <Segmented label="Type" value={type} onChange={setType} options={[{ value: 'expense', label: 'Dépense' }, { value: 'income', label: 'Revenu' }, { value: 'transfer', label: 'Entre nos comptes' }]} />
 
         <Field label="Montant" error={error}>
           <div className="input-group">
@@ -198,8 +213,8 @@ export default function TransactionForm() {
         <TagInput label="Étiquettes" value={txTags} onChange={setTags} suggestions={tags} />
         <TextField label="Note" value={note} onChange={setNote} placeholder="Facultatif" />
         <Attachments value={attachments} onChange={setAttachments} />
-        {existing?.reconciledAt && <p className="faint" style={{ margin: 0 }}>✓ Rapprochée avec le relevé bancaire{existing.rawLabel ? ` (« ${existing.rawLabel} »)` : ''}.</p>}
-        {existing?.rawLabel && <p className="faint" style={{ margin: 0 }}>Libellé du relevé : {existing.rawLabel} {existing.rawLabel !== payee && <button type="button" className="btn sm" onClick={() => onPayee(cleanLabel(existing.rawLabel!))}>Utiliser</button>}</p>}
+        {existing?.reconciledAt && <p className="faint" style={{ margin: 0 }}>✓ Retrouvée sur le relevé de la banque{existing.rawLabel ? ` (« ${existing.rawLabel} »)` : ''}.</p>}
+        {existing?.rawLabel && <p className="faint" style={{ margin: 0 }}>Texte sur le relevé : {existing.rawLabel} {existing.rawLabel !== payee && <button type="button" className="btn sm" onClick={() => onPayee(cleanLabel(existing.rawLabel!))}>Utiliser</button>}</p>}
           </div>
         </details>
 

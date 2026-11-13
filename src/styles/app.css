@@ -134,9 +134,9 @@ textarea.input { padding: var(--s3); min-height: 80px; resize: vertical; }
 .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .chart-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
 .colchart { position: relative; }
-.colchart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.colchart svg { display: block; overflow: visible; }
 .colchart .grid line { stroke: var(--border); stroke-width: 1; }
-.colchart .axis text { fill: var(--text-2); font-size: 11px; }
+.colchart .axis text { fill: var(--text-2); font-size: 13px; }
 .colchart .tip { position: absolute; transform: translate(-50%, -100%); pointer-events: none; background: var(--text); color: var(--bg); border-radius: 8px; padding: 6px 10px; font-size: 13px; white-space: nowrap; box-shadow: var(--shadow); z-index: 2; }
 
 /* ---------- Navigation basse ---------- */
@@ -277,7 +277,6 @@ table.data .faint { font-size: inherit; }
 .simple-bar .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
 .simple-bar .track { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
 .simple-bar .track span { display: block; height: 100%; border-radius: 999px; }
-.menu-group > summary { cursor: pointer; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); padding: var(--s2) 0; }
 
 /* ---------- Verrouillage ---------- */
 .lock { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s3); padding: var(--s5); }
@@ -341,3 +340,34 @@ kbd { font: 600 12px var(--font); border: 1px solid var(--field-border); border-
 .quick-other { min-height: 44px; border: 0; background: none; color: var(--primary); font-size: 14px; font-weight: 600; }
 /* (+) est un lien vers /rapide (Q5) : il garde l'apparence du bouton rond */
 .nav a.fab { display: grid; gap: 0; width: 60px; height: 60px; color: var(--on-primary); }
+
+/* ---------- Relevé sur téléphone : le tableau défile dans son cadre ---------- */
+.swipe-hint { display: none; margin: 0; font-size: 13px; color: var(--text-3); }
+@media (max-width: 600px) {
+  .statement-wrap { overflow-x: auto; overscroll-behavior-x: contain; }
+  .statement-table { min-width: 600px; }
+  .statement-table th.hide-sm, .statement-table td.hide-sm { display: table-cell; }
+  .statement-table th:first-child, .statement-table td:first-child { position: sticky; left: 0; background: var(--surface); }
+  .swipe-hint { display: block; }
+}
+@media print { .statement-table { min-width: 0; } }
+
+/* ---------- Cibles tactiles 44 px (spécification 21 § 7, recette R7) ---------- */
+.chip { min-height: 44px; }
+.seg { padding: 3px; gap: 3px; }
+.seg button { min-height: 38px; position: relative; }
+.seg button::after { content: ''; position: absolute; inset: -3px 0; }
+.btn.sm { min-height: 44px; }
+.section-title a, .section-title button { min-height: 44px; display: inline-flex; align-items: center; padding: 0 4px; }
+.simple-bar, .hbar { min-height: 44px; }
+/* ---------- États vides ---------- */
+.empty > strong { font-size: 17px; font-weight: 600; color: var(--text); }
+.empty > span, .empty > p { font-size: 15px; color: var(--text-2); max-width: 36ch; }
+/* Recette R5 : les dates « Prochains » passent à la ligne au lieu de faire déborder l'écran */
+.next-dates { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 10px; min-width: 0; }
+.btn.danger-fill { background: var(--danger); border-color: var(--danger); color: var(--on-danger); }
+@media (hover: hover) { .btn.danger-fill:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 88%, #000); } }
+.dialog-actions .btn[data-autofocus] { order: 0; }
+.callout.danger-callout { background: var(--danger-soft); color: var(--danger); }
+.hbar .bar.cat-bar { background: color-mix(in srgb, var(--c, #94A3B8) var(--bar-mix), var(--bar-mix-with)); }
+.btn.danger-fill { padding-block: 10px; line-height: 1.25; text-align: center; }

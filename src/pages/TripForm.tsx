@@ -45,7 +45,7 @@ export default function TripForm() {
     if (!name.trim()) return setError('Donnez un nom au voyage.')
     if (endDate < startDate) return setError('La date de retour est avant le départ.')
     const budgetLines: TripLine[] = lines.filter((l) => l.label.trim() && parseAmount(l.amount) > 0).map((l) => ({ id: l.id, label: l.label.trim(), amount: parseAmount(l.amount), currency: l.currency }))
-    const saved = upsert('trips', { ...(existing ?? {}), id: existing?.id, name: name.trim(), destination: destination.trim() || undefined, startDate, endDate, savingsAccountId: savingsAccountId || undefined, color, notes: notes.trim() || undefined, budgetLines, currency: tripCurrency, cardAccountId: cardAccountId || undefined })
+    const saved = upsert('trips', { ...existing, id: existing?.id, name: name.trim(), destination: destination.trim() || undefined, startDate, endDate, savingsAccountId: savingsAccountId || undefined, color, notes: notes.trim() || undefined, budgetLines, currency: tripCurrency, cardAccountId: cardAccountId || undefined })
     toast(existing ? 'Voyage modifié' : 'Voyage créé')
     nav(`/voyages/${saved.id}`, { replace: true })
   }

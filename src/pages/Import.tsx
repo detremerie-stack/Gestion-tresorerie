@@ -158,7 +158,7 @@ export default function Import() {
           <input type="file" accept=".csv,.txt,.ofx,.qfx,text/csv" className="sr-only" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
         </label>
         {error && <p className="error" role="alert" style={{ color: 'var(--expense)', margin: 0 }}>{error}</p>}
-        <p className="faint" style={{ margin: 0 }}>Le fichier est lu sur votre téléphone ; rien n'est envoyé ailleurs (sauf la synchronisation de votre foyer). PDF : non pris en charge pour l'instant, exportez en CSV.</p>
+        <p className="faint" style={{ margin: 0 }}>Le fichier est lu sur cet appareil ; rien n'est envoyé ailleurs (sauf la synchronisation de votre foyer). PDF : non pris en charge pour l'instant, exportez en CSV.</p>
       </div>
 
       {mapping && rows && (
@@ -166,7 +166,7 @@ export default function Import() {
           <div className="card form">
             <div className="grid-2">
               <SelectField label="Date" value={String(mapping.dateCol)} onChange={(v) => setM({ dateCol: Number(v) })} options={colOptions} />
-              <SelectField label="Libellé" value={String(mapping.labelCol)} onChange={(v) => setM({ labelCol: Number(v) })} options={colOptions} />
+              <SelectField label="Description" value={String(mapping.labelCol)} onChange={(v) => setM({ labelCol: Number(v) })} options={colOptions} />
             </div>
             <SelectField label="Montant" value={mapping.amountCol !== undefined ? 'single' : 'split'} onChange={(v) => setM(v === 'single' ? { amountCol: mapping.amountCol ?? mapping.debitCol ?? 0, debitCol: undefined, creditCol: undefined } : { amountCol: undefined, debitCol: mapping.debitCol ?? 0, creditCol: mapping.creditCol ?? 1 })}
               options={[{ value: 'single', label: 'Une colonne (signée)' }, { value: 'split', label: 'Deux colonnes Débit / Crédit' }]} />
@@ -198,7 +198,7 @@ export default function Import() {
           )}
           <div className="card flush table-wrap">
             <table className="data">
-              <thead><tr><th>Date</th><th>Libellé · catégorie</th><th className="r">Montant</th></tr></thead>
+              <thead><tr><th>Date</th><th>Description · catégorie</th><th className="r">Montant</th></tr></thead>
               <tbody>
                 {preview.slice(0, 200).map((p) => (
                   <tr key={p.hash} className={p.dup && skipDup ? 'dup' : ''}>

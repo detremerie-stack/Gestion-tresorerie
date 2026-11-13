@@ -18,7 +18,7 @@ export function CategoryEditor({ initial, kind, onDone, onCancel }: { initial?: 
   const list = iconsOf(q ? undefined : group, q)
   const save = () => {
     if (!name.trim()) return
-    onDone(upsert('categories', { ...(initial ?? {}), name: name.trim(), kind: k, icon, color }))
+    onDone(upsert('categories', { ...initial, name: name.trim(), kind: k, icon, color }))
   }
   return (
     <div className="card form">

@@ -41,14 +41,14 @@ export default function Reports() {
   }, [inPeriod, accounts, rates])
 
   return (
-    <Page title="Rapports" back wide>
+    <Page title="Où part notre argent" back wide>
       <Segmented label="Période" value={period} onChange={setPeriod} options={[{ value: '1', label: 'Ce mois' }, { value: '3', label: '3 mois' }, { value: '6', label: '6 mois' }, { value: '12', label: '12 mois' }]} />
 
       <div className="card kpis">
         <div className="kpi"><span className="label">Revenus</span><Money className="value" value={tot.income} /></div>
         <div className="kpi"><span className="label">Dépenses</span><Money className="value" value={tot.expense} /></div>
-        <div className="kpi"><span className="label">Solde</span><Money className="value" value={tot.net} sign tone /></div>
-        <div className="kpi"><span className="label">Taux d'épargne</span><span className="value num">{savingRate == null ? '—' : `${savingRate} %`}</span></div>
+        <div className="kpi"><span className="label">Différence</span><Money className="value" value={tot.net} sign tone /></div>
+        <div className="kpi"><span className="label">Mis de côté (%)</span><span className="value num">{savingRate == null ? '—' : `${savingRate} %`}</span></div>
         {n > 1 && <div className="kpi"><span className="label">Dépenses / mois</span><Money className="value" value={Math.round(tot.expense / n)} /></div>}
       </div>
 

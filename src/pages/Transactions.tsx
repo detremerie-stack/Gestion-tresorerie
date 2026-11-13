@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { Archive, ChevronLeft, ChevronRight, ListX, Paperclip, Search, Upload } from 'lucide-react'
 import { useMap, useStore } from '../data/store'
 import { COMMON, useAccounts, useMemberName, useMembers, useTransactions } from '../data/hooks'
-import { addInterval, addMonths, formatDate, formatLongDate, monthKey, monthLabel, today } from '../lib/dates'
+import { addInterval, addMonths, formatDate, formatLongDate, formatShortDate, monthKey, monthLabel, today } from '../lib/dates'
 import { archiveStart } from '../lib/forecast'
-import { normalize } from '../lib/id'
+import { PAGE_SIZE, buildSearchIndex, filterTransactions, groupByDay } from '../lib/history'
 import { signedXPF, totals } from '../lib/reports'
-import type { Transaction, TxType } from '../data/types'
+import type { TxType } from '../data/types'
 import { Money } from '../ui/Money'
 import { Empty, Page } from '../ui/Page'
 import { CatIcon } from '../ui/Icon'
@@ -43,36 +43,24 @@ export default function Transactions() {
     setParams(next, { replace: true })
   }
 
-  const filtered = useMemo(() => {
-    const nq = normalize(q)
-    return all.filter((t) => {
-      if (!q && monthKey(t.date) !== month) return false
-      if (!archives && t.date < archiveFrom) return false
-      if (type !== 'all' && t.type !== type) return false
-      if (accountId && t.accountId !== accountId && t.toAccountId !== accountId) return false
-      if (catId && (catId === 'none' ? !!t.categoryId : t.categoryId !== catId)) return false
-      if (member && (t.member ?? COMMON) !== member) return false
-      if (tag && !t.tags.includes(tag)) return false
-      if (nq) {
-        const hay = normalize([t.payee, t.note, t.rawLabel, cats.get(t.categoryId ?? '')?.name, ...t.tags].filter(Boolean).join(' '))
-        if (!hay.includes(nq)) return false
-      }
-      return true
-    })
-  }, [all, q, month, type, accountId, catId, member, tag, cats, archives, archiveFrom])
-
-  const groups = useMemo(() => {
-    const m = new Map<string, Transaction[]>()
-    for (const t of filtered) m.set(t.date, [...(m.get(t.date) ?? []), t])
-    return [...m.entries()]
-  }, [filtered])
+  // Recherche fluide : index normalisé calculé une fois, frappe différée, 200 lignes à la fois.
+  const index = useMemo(() => buildSearchIndex(all, cats), [all, cats])
+  const dq = useDeferredValue(q)
+  const filtered = useMemo(
+    () => filterTransactions(all, { q: dq, month, archives, archiveFrom, type, accountId, catId, member, tag, common: COMMON }, index),
+    [all, dq, month, type, accountId, catId, member, tag, index, archives, archiveFrom],
+  )
+  const [limit, setLimit] = useState(PAGE_SIZE)
+  useEffect(() => setLimit(PAGE_SIZE), [dq, month, type, accountId, catId, member, tag, archives])
+  const shown = filtered.length > limit ? filtered.slice(0, limit) : filtered
+  const groups = useMemo(() => groupByDay(shown), [shown])
 
   const tot = totals(filtered, accountsMap, rates)
   const activeCat = catId && catId !== 'none' ? cats.get(catId) : undefined
 
   return (
     <Page title="Historique" wide actions={<Link to="/import" className="icon-btn" aria-label="Importer un relevé"><Upload size={20} /></Link>}>
-      <div className="stack" style={{ gap: 12 }}>
+      <div className="stack history-filters" style={{ gap: 12 }}>
         <div className="search">
           <Search size={18} />
           <input id="historique-recherche" className="input" type="search" placeholder="Rechercher (toutes périodes)…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" autoFocus={!!focusSearch} />
@@ -85,7 +73,7 @@ export default function Transactions() {
           </div>
         )}
         <div className="chips" role="group" aria-label="Type">
-          {([['all', 'Tout'], ['expense', 'Dépenses'], ['income', 'Revenus'], ['transfer', 'Virements']] as const).map(([v, l]) => (
+          {([['all', 'Tout'], ['expense', 'Dépenses'], ['income', 'Revenus'], ['transfer', 'Entre nos comptes']] as const).map(([v, l]) => (
             <button key={v} className="chip" aria-pressed={type === v} onClick={() => setParam('type', v === 'all' ? '' : v)}>{l}</button>
           ))}
         </div>
@@ -116,17 +104,19 @@ export default function Transactions() {
       </div>
 
       <div className="kpis card">
-        <div className="kpi"><span className="label">Rentrées</span><Money className="value income" value={tot.income} /></div>
+        <div className="kpi"><span className="label">Entrées</span><Money className="value income" value={tot.income} /></div>
         <div className="kpi"><span className="label">Sorties</span><Money className="value expense" value={-tot.expense} /></div>
       </div>
 
       {groups.length === 0 ? (
         <Empty icon={<ListX size={40} />} title="Aucune opération">
-          <span>Ajoutez une dépense avec le bouton +, ou importez un relevé bancaire.</span>
+          <span>Ajoutez une dépense avec le bouton +, ou importez le fichier de la banque.</span>
           <Link className="btn" to="/import"><Upload size={18} />Importer un relevé</Link>
         </Empty>
       ) : (
-        <div className="card flush">
+        <>
+        <div className="card flush tx-table">
+          <div className="tx-head desk-only" aria-hidden="true"><span /><span>Date</span><span>Description</span><span>Catégorie</span><span>Compte</span><span className="r">Montant</span></div>
           {groups.map(([date, items]) => {
             const dayNet = items.reduce((s, t) => s + signedXPF(t, accountsMap, rates), 0)
             return (
@@ -144,16 +134,20 @@ export default function Transactions() {
                     const who = memberName(t.member)
                     return (
                       <li key={t.id}>
-                        <Link className="row" to={`/operations/${t.id}`}>
+                        <Link className="row tx-row" to={`/operations/${t.id}`}>
                           {t.type === 'transfer' ? <CatIcon icon="undo-2" color="#64748B" /> : <CatIcon icon={cat?.icon} color={cat?.color} />}
+                          <span className="col-date desk-only">{formatShortDate(t.date)}</span>
                           <div className="main">
                             <span className="title">
-                              {t.type === 'transfer' ? `Virement vers ${to?.name ?? '?'}` : t.payee || cat?.name || 'Sans catégorie'}
+                              {t.type === 'transfer' ? `Vers ${to?.name ?? '?'}` : t.payee || cat?.name || 'Sans catégorie'}
                             </span>
-                            <span className="sub">
+                            <span className="sub phone-only">
                               {[t.type !== 'transfer' && t.payee ? cat?.name ?? 'Sans catégorie' : null, acc?.name, who, ...t.tags.map((x) => '#' + x)].filter(Boolean).join(' · ')}
                             </span>
+                            {(who || t.tags.length > 0) && <span className="sub desk-only">{[who, ...t.tags.map((x) => '#' + x)].filter(Boolean).join(' · ')}</span>}
                           </div>
+                          <span className="col-cat desk-only">{t.type === 'transfer' ? 'Entre nos comptes' : cat?.name ?? 'Sans catégorie'}</span>
+                          <span className="col-acc desk-only">{acc?.name}</span>
                           <div className="end">
                             <Money className={`amount ${t.type === 'transfer' ? '' : t.type}`} value={t.type === 'transfer' ? t.amount : sign * t.amount} currency={acc?.currency} sign={t.type === 'income'} />
                             {t.originalCurrency && <span className="faint"><Money value={t.originalAmount ?? 0} currency={t.originalCurrency} /></span>}
@@ -171,6 +165,10 @@ export default function Transactions() {
             )
           })}
         </div>
+        {filtered.length > shown.length && (
+          <button className="btn" onClick={() => setLimit((n) => n + PAGE_SIZE)}>Voir plus ({filtered.length - shown.length} de plus)</button>
+        )}
+        </>
       )}
     </Page>
   )

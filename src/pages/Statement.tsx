@@ -63,7 +63,7 @@ export default function Statement() {
   }
 
   return (
-    <Page title="Relevé" back wide>
+    <Page title="Imprimer un relevé" back wide>
       <div className="card form no-print">
         <SelectField label="Compte" value={accountId} onChange={setAccountId} options={accounts.map((a) => ({ value: a.id, label: a.name }))} />
         <div className="grid-2">
@@ -86,13 +86,13 @@ export default function Statement() {
             <span className="faint print-only">Édité le {formatDate(today())} · Fare Moni</span>
           </div>
           <div className="kpis statement-kpis">
-            <div className="kpi"><span className="label">Solde début</span><span className="num">{f(data.opening)}</span></div>
+            <div className="kpi"><span className="label">Solde au début</span><span className="num">{f(data.opening)}</span></div>
             <div className="kpi"><span className="label">Débits</span><span className="num">{f(-data.debit)}</span></div>
             <div className="kpi"><span className="label">Crédits</span><span className="num">{f(data.credit)}</span></div>
-            <div className="kpi"><span className="label">Solde fin</span><strong className="num">{f(data.closing)}</strong></div>
+            <div className="kpi"><span className="label">Solde à la fin</span><strong className="num">{f(data.closing)}</strong></div>
           </div>
-          <div className="table-wrap">
-            <table className="data">
+          <div className="table-wrap statement-wrap">
+            <table className="data statement-table">
               <thead><tr><th>Date</th><th>Libellé</th><th className="hide-sm">Catégorie</th><th className="r">Débit</th><th className="r">Crédit</th><th className="r">Solde</th></tr></thead>
               <tbody>
                 {data.rows.map((r) => (
@@ -109,6 +109,7 @@ export default function Statement() {
               </tbody>
             </table>
           </div>
+          <p className="swipe-hint no-print">Faites glisser le tableau pour voir les colonnes →</p>
         </div>
       )}
     </Page>

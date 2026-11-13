@@ -122,7 +122,7 @@ function SubCard({ s, next, today: t, fee, due }: { s: Subscription; next: strin
         <div className="name">{s.name}</div>
         <div className="plan">
           {s.status === 'trial' && <span className="badge primary">Essai</span>} {s.status === 'paused' && <span className="badge">En pause</span>}
-          {s.status === 'cancelled' && <span className="badge">Résilié</span>} {due > 0 && <span className="badge warn">À enregistrer</span>} {s.plan ?? cycleLabel(s)}
+          {s.status === 'cancelled' && <span className="badge">Résilié</span>} {due > 0 && <span className="badge warn">À confirmer</span>} {s.plan ?? cycleLabel(s)}
         </div>
       </div>
       <div className="price">
@@ -158,7 +158,7 @@ function Upcoming({ subs, today: t, fee }: { subs: Subscription[]; today: string
     <>
       <Segmented label="Horizon" value={horizon} onChange={setHorizon} options={[{ value: '3', label: '3 mois' }, { value: '12', label: '12 mois' }]} />
       {due.length > 0 && (
-        <Section title="Passés, à enregistrer">
+        <Section title="À confirmer">
           <div className="card flush"><ul className="list">
             {due.map(({ sub, date }) => (
               <li key={sub.id + date}><div className="row">

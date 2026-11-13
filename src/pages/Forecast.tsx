@@ -90,7 +90,7 @@ export default function Forecast() {
       <Section title="Détail par mois">
         <div className="card flush table-wrap">
           <table className="data">
-            <thead><tr><th>Mois</th><th className="r">Entrées</th><th className="r">Sorties</th><th className="r">Solde fin</th></tr></thead>
+            <thead><tr><th>Mois</th><th className="r">Entrées</th><th className="r">Sorties</th><th className="r">À la fin du mois</th></tr></thead>
             <tbody>
               {rows.map((r) => {
                 const out = r.subscriptions + r.loans + r.planned + r.trips + r.variable
@@ -111,7 +111,7 @@ export default function Forecast() {
             </tbody>
           </table>
         </div>
-        <p className="faint" style={{ margin: 0 }}>Estimation : soldes actuels + prévisions + abonnements + échéances de prêts + budgets voyages restants − dépenses courantes. Les virements entre vos comptes ne changent pas le total.</p>
+        <p className="faint" style={{ margin: 0 }}>Estimation : soldes actuels + prévisions + abonnements + mensualités de crédit + budgets voyages restants − dépenses courantes. Les virements entre vos comptes ne changent pas le total.</p>
       </Section>
       </details>
 

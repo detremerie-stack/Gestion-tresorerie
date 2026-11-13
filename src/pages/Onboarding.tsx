@@ -37,7 +37,7 @@ export default function Onboarding() {
         <strong>Véra, Lionel a déjà commencé ?</strong>
         <p className="muted" style={{ margin: 0, fontSize: 14 }}>
           Commencez à vide, puis rejoignez le foyer avec son code d'invitation dans
-          <em> Plus › Synchronisation</em>.
+          <em> Menu › Partage</em>.
         </p>
         <button className="btn block" onClick={() => complete({ member })}>
           <Cloud size={18} /> Commencer à vide

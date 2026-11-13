@@ -29,11 +29,11 @@ export default function RulesPage() {
       return cat && cat.kind === t.type ? [{ ...t, categoryId: cat.id }] : []
     })
     upsertMany('transactions', updated)
-    toast(`${updated.length} opération(s) catégorisée(s)`)
+    toast(`${updated.length} opération(s) classée(s)`)
   }
 
   return (
-    <Page title="Règles automatiques" back>
+    <Page title="Classement automatique" back>
       <p className="muted" style={{ margin: 0 }}>Si le libellé d'une opération importée contient le mot indiqué, la catégorie est appliquée automatiquement. Les commerces et organismes de Polynésie courants sont déjà inclus.</p>
       {uncategorized.length > 0 && (
         <button className="btn" onClick={applyToUncategorized}><Wand2 size={18} />Appliquer aux {uncategorized.length} opération(s) sans catégorie</button>

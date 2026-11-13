@@ -49,7 +49,7 @@ export default function Budgets() {
   }
 
   return (
-    <Page title="Budgets" back>
+    <Page title="Limites de dépenses" back>
       <div className="month-nav">
         <button className="icon-btn" aria-label="Mois précédent" onClick={() => setMonth(addMonths(month, -1))}><ChevronLeft /></button>
         <strong>{monthLabel(month)}</strong>
@@ -58,8 +58,8 @@ export default function Budgets() {
 
       {rows.length > 0 && (
         <div className="card stack" style={{ gap: 10 }}>
-          <div className="split"><span className="muted">Dépensé / budgété</span><span className="num"><Money value={totalSpent} /> / <Money value={totalBudget} /></span></div>
-          <Meter value={totalSpent} max={totalBudget} label="Budget total" />
+          <div className="split"><span className="muted">Dépensé / limite</span><span className="num"><Money value={totalSpent} /> / <Money value={totalBudget} /></span></div>
+          <Meter value={totalSpent} max={totalBudget} label="Limite totale" />
           <div className="split faint">
             <span>{totalSpent <= totalBudget ? `Reste ${formatMoney(totalBudget - totalSpent)}` : `Dépassement ${formatMoney(totalSpent - totalBudget)}`}</span>
             {unbudgeted > 0 && <span>Hors budget : {formatMoney(unbudgeted)}</span>}
@@ -109,7 +109,7 @@ export default function Budgets() {
       </Section>
 
       {free.length > 0 && (
-        <Section title="Ajouter un budget">
+        <Section title="Ajouter une limite">
           <div className="card form">
             <select className="input" value={newCat} onChange={(e) => setNewCat(e.target.value)} aria-label="Catégorie">
               <option value="">Choisir une catégorie…</option>

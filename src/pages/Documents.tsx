@@ -26,7 +26,7 @@ export default function Documents() {
     return [...m.entries()]
   }, [withDocs])
   return (
-    <Page title="Documents" back>
+    <Page title="Tickets et factures" back>
       <div className="search"><Search size={18} /><input className="input" type="search" placeholder="Rechercher (commerçant, catégorie, voyage…)" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" /></div>
       {months.length === 0 ? (
         <Empty icon={<FolderOpen size={40} />} title="Aucun justificatif">

@@ -41,7 +41,7 @@ export function dueItems(subs: Subscription[], loans: Loan[], today: ISODate): D
     key: sub.id + date, kind: 'subscription' as const, id: sub.id, name: sub.name, date, color: sub.color, to: `/abonnements/${sub.id}`,
   })))
   const l: DueItem[] = loans.flatMap((loan) => dueInstallments(loan, today).map((inst) => ({
-    key: loan.id + inst.date, kind: 'loan' as const, id: loan.id, name: `${loan.name} · échéance ${inst.n}`, date: inst.date, color: loan.color, to: `/prets/${loan.id}`, installment: inst,
+    key: loan.id + inst.date, kind: 'loan' as const, id: loan.id, name: `${loan.name} · mensualité ${inst.n}`, date: inst.date, color: loan.color, to: `/prets/${loan.id}`, installment: inst,
   })))
   return [...s, ...l].sort((a, b) => a.date.localeCompare(b.date))
 }
@@ -54,7 +54,7 @@ export function upcomingItems(subs: Subscription[], loans: Loan[], accounts: Map
     return { key: sub.id + date, kind: 'subscription' as const, id: sub.id, name: sub.name, date, xpf: paymentXPF(sub, rates, fee), approx: !isExact(sub, fee), color: sub.color, to: `/abonnements/${sub.id}`, remind: sub.remindDays }
   })
   const l: UpcomingItem[] = loans.flatMap((loan) => installmentsBetween(loan, from, to).map((inst) => ({
-    key: loan.id + inst.date, kind: 'loan' as const, id: loan.id, name: `${loan.name} · échéance`, date: inst.date, xpf: toXPF(inst.total, loan.currency, rates), approx: !isFixedRate(loan.currency),
+    key: loan.id + inst.date, kind: 'loan' as const, id: loan.id, name: `${loan.name} · mensualité`, date: inst.date, xpf: toXPF(inst.total, loan.currency, rates), approx: !isFixedRate(loan.currency),
     color: loan.color, to: `/prets/${loan.id}`, remind: 3,
   })))
   return [...s, ...l].sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name))

@@ -155,7 +155,7 @@ export default function SubscriptionForm() {
           <div className="card stack" style={{ gap: 6 }}>
             <div className="split"><span className="muted">Coût mensuel</span><Money value={monthlyCost(draft, rates, fee)} approx={!exact} /></div>
             <div className="split"><span className="muted">Coût annuel</span><Money value={yearlyCost(draft, rates, fee)} approx={!exact} /></div>
-            <div className="split"><span className="muted">Prochains</span><span className="num">{preview.map((p) => formatDate(p.date)).join(' · ')}</span></div>
+            <div className="split" style={{ alignItems: 'flex-start' }}><span className="muted">Prochains</span><span className="num next-dates">{preview.map((p) => <span key={p.date}>{formatDate(p.date)}</span>)}</span></div>
           </div>
         )}
 

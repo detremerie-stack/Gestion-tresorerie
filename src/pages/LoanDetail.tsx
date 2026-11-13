@@ -27,7 +27,7 @@ export default function LoanDetail() {
   }, [rows])
 
   if (!loan || loan.deleted) {
-    return <Page title="Prêt" back><p className="muted">Ce prêt n'existe plus.</p><button className="btn" onClick={() => nav('/prets')}>Retour aux prêts</button></Page>
+    return <Page title="Crédit" back><p className="muted">Ce crédit n'existe plus.</p><button className="btn" onClick={() => nav('/prets')}>Retour aux crédits</button></Page>
   }
   const st = loanStatus(loan, t)
   const due = dueInstallments(loan, t)
@@ -55,12 +55,12 @@ export default function LoanDetail() {
       {due.length > 0 && (
         <div className="callout warn" style={{ alignItems: 'center' }}>
           <span style={{ flex: 1 }}>
-            {due.length} échéance{due.length > 1 ? 's' : ''} passée{due.length > 1 ? 's' : ''} pas encore notée(s) dans l'historique
+            {due.length} mensualité{due.length > 1 ? 's' : ''} passée{due.length > 1 ? 's' : ''} pas encore notée(s) dans l'historique
             ({due.slice(-3).map((d) => formatDate(d.date)).join(', ')}{due.length > 3 ? '…' : ''})
           </span>
           <button className="btn sm" onClick={() => {
             for (const d of due) markPaid(useStore.getState().data.loans[loan.id], d)
-            toast(`${due.length} échéance(s) enregistrée(s)`)
+            toast(`${due.length} mensualité(s) notée(s)`)
           }}><Check size={16} />Payé</button>
         </div>
       )}

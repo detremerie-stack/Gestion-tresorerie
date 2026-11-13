@@ -140,7 +140,7 @@ export default function LoanForm() {
         </div>
 
         <SelectField label="Prélevé sur" value={accountId} onChange={setAccountId} options={[{ value: '', label: 'Non précisé' }, ...accounts.map((a) => ({ value: a.id, label: `${a.name} (${a.currency})` }))]} />
-        <SelectField label="Catégorie des échéances" value={categoryId} onChange={setCategoryId}
+        <SelectField label="Catégorie des mensualités" value={categoryId} onChange={setCategoryId}
           options={[...(categories.some((c) => c.id === 'c-credits') ? [] : [{ value: 'c-credits', label: 'Crédits & prêts' }]), ...categories.filter((c) => c.kind === 'expense').map((c) => ({ value: c.id, label: c.name }))]} />
         <div className="field">
           <span className="label">Emprunteur</span>

@@ -20,7 +20,7 @@ export default function Loans() {
   const approx = active.some((r) => !isFixedRate(r.l.currency))
 
   return (
-    <Page title="Nos crédits" back actions={<Link className="icon-btn" to="/prets/nouveau" aria-label="Ajouter un prêt"><Plus /></Link>}>
+    <Page title="Crédits" back actions={<Link className="icon-btn" to="/prets/nouveau" aria-label="Ajouter un crédit"><Plus /></Link>}>
       {rows.length === 0 ? (
         <Empty icon={<Landmark size={40} />} title="Aucun crédit">
           <span>Crédit immobilier, auto, conso… voyez ce qu'il reste à rembourser et jusqu'à quand.</span>

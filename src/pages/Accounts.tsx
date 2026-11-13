@@ -21,7 +21,7 @@ export default function Accounts() {
       <div className="card hero">
         <span className="label">Total en francs Pacifique</span>
         <Money className="value" value={total} approx={approx} />
-        {debt > 0 && <span className="faint">Prêts : <Money value={-debt} /> · patrimoine net <Money value={total - debt} /></span>}
+        {debt > 0 && <span className="faint">Crédits : <Money value={-debt} /> · patrimoine net <Money value={total - debt} /></span>}
       </div>
       <div className="card flush">
         <ul className="list">
@@ -44,12 +44,12 @@ export default function Accounts() {
         </ul>
       </div>
       {debts.length > 0 && (
-        <Section title="Dettes (prêts)">
+        <Section title="Crédits en cours">
           <div className="card flush"><ul className="list">
             {debts.map(({ l, st }) => (
               <li key={l.id}><Link className="row" to={`/prets/${l.id}`} style={{ color: 'inherit' }}>
                 <CatIcon icon="landmark" color={l.color} />
-                <div className="main"><span className="title">{l.name}</span><span className="sub">{l.lender ?? 'Prêt'} · {Math.round(st.progress * 100)} % remboursé</span></div>
+                <div className="main"><span className="title">{l.name}</span><span className="sub">{l.lender ?? 'Crédit'} · {Math.round(st.progress * 100)} % remboursé</span></div>
                 <Money className="amount expense" value={-st.remaining} currency={l.currency} />
               </Link></li>
             ))}

@@ -58,7 +58,7 @@ export default function AccountForm() {
     if (!name.trim()) return setError('Donnez un nom au compte.')
     if (Number.isNaN(bal)) return setError('Solde initial illisible.')
     const parsedCards = cards.map((c) => c.split(':')).filter(([d]) => /^\d{4}$/.test(d))
-    upsert('accounts', { ...(existing ?? {}), id: existing?.id, name: name.trim(), institution, type, currency, initialBalance: bal, initialDate: initialDate || undefined, fxFeePct: Number.isNaN(f) ? 0 : f, color, owner, cardLast4: parsedCards.map(([d]) => d), cardOwners: Object.fromEntries(parsedCards.filter(([, m]) => m).map(([d, m]) => [d, m])) })
+    upsert('accounts', { ...existing, id: existing?.id, name: name.trim(), institution, type, currency, initialBalance: bal, initialDate: initialDate || undefined, fxFeePct: Number.isNaN(f) ? 0 : f, color, owner, cardLast4: parsedCards.map(([d]) => d), cardOwners: Object.fromEntries(parsedCards.filter(([, m]) => m).map(([d, m]) => [d, m])) })
     toast(existing ? 'Compte modifié' : 'Compte ajouté')
     nav(-1)
   }

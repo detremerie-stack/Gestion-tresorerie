@@ -42,7 +42,7 @@ export default function PlannedForm() {
     if (!name.trim()) return setError('Donnez un nom (ex. Salaire Véra, Impôt foncier, Rentrée scolaire).')
     if (!(v > 0)) return setError('Indiquez un montant.')
     upsert('planned', {
-      ...(existing ?? {}), id: existing?.id, name: name.trim(), kind, amount: v, currency, unit, every: unit === 'once' ? 1 : Math.max(1, every),
+      ...existing, id: existing?.id, name: name.trim(), kind, amount: v, currency, unit, every: unit === 'once' ? 1 : Math.max(1, every),
       startDate, endDate: endDate || undefined, categoryId: categoryId || undefined, accountId: accountId || undefined, member, active, notes: notes.trim() || undefined,
     })
     toast(existing ? 'Prévision modifiée' : 'Prévision ajoutée')

@@ -54,7 +54,7 @@ export default function Dashboard() {
       const item = ag.rows.find((r) => r.type === 'due' && r.id === id && r.date === date)
       if (!item || item.type !== 'due' || !item.installment) return
       const tx = markLoanPaid(before, item.installment)
-      toast(`Échéance ${before.name} enregistrée`, { label: 'Annuler', run: () => { remove('transactions', tx.id); useStore.getState().upsert('loans', before) } })
+      toast(`Mensualité ${before.name} notée`, { label: 'Annuler', run: () => { remove('transactions', tx.id); useStore.getState().upsert('loans', before) } })
     }
   }
 
@@ -143,7 +143,7 @@ export default function Dashboard() {
                     <Link className="row" to={r.to}>
                       <span className="dot" style={{ background: r.color, width: 12, height: 12 }} />
                       <div className="main">
-                        <span className="title">{r.name.replace(' · échéance', '')}</span>
+                        <span className="title">{r.name.replace(' · mensualité', '')}</span>
                         <span className="sub">{d === 1 ? 'Demain' : `Dans ${d} jours`} · {formatShortDate(r.date)}</span>
                       </div>
                       <Money className="amount" value={r.xpf} approx={r.approx} />

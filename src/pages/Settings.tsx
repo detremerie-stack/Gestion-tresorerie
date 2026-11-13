@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { biometricAvailable, checkPin, disableBiometric, disableLock, enableBiometric, hasBiometric, isLockEnabled, setPin } from '../lib/lock'
 import { PinPad } from '../ui/LockScreen'
+import { WipeButton } from '../ui/WipeButton'
 import { ChevronRight, Download, FileText, RefreshCw, Smartphone, Tags, Upload, Wand2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../data/store'
@@ -50,6 +51,7 @@ function LockSettings() {
           <input type="checkbox" checked={enabled} onChange={() => { setError(undefined); setStep(enabled ? 'off' : 'new') }} />
           <span><strong>Verrouiller l'app par un code</strong><br /><span className="faint">Demandé à l'ouverture et après 2 minutes d'absence.</span></span>
         </label>
+        <p className="faint" style={{ margin: 0 }}>Le code empêche un coup d'œil. Il ne protège pas contre quelqu'un de compétent qui aurait l'appareil entre les mains.</p>
         {enabled && bioOk && (
           <label className="check">
             <input type="checkbox" checked={bio} onChange={async () => {
@@ -59,6 +61,7 @@ function LockSettings() {
           </label>
         )}
         <span className="faint">Réglage propre à ce téléphone. Code oublié : il faudra effacer les données de l'app dans Chrome puis vous reconnecter au foyer (vos données partagées sont conservées).</span>
+        <WipeButton />
       </div>
     </Section>
   )
@@ -111,7 +114,7 @@ export default function Settings() {
   const editable = CURRENCIES.filter((c) => c.code !== 'XPF' && c.code !== 'EUR')
 
   return (
-    <Page title="Paramètres" back>
+    <Page title="Réglages" back>
       <Section title="Cet appareil">
         <div className="card form">
           <div className="field">
@@ -137,7 +140,7 @@ export default function Settings() {
           <Segmented label="Années affichées" value={String(settings.visibleYears ?? 2)} onChange={(v) => setSettings({ visibleYears: Number(v) })}
             options={[{ value: '1', label: '1 an' }, { value: '2', label: '2 ans' }, { value: '3', label: '3 ans' }, { value: '5', label: '5 ans' }]} />
           <span className="faint">
-            Les opérations avant le {formatDate(archiveStart(today(), settings.visibleYears ?? 2))} sont archivées : toujours comptées dans les soldes et consultables (Opérations › Archives),
+            Les opérations avant le {formatDate(archiveStart(today(), settings.visibleYears ?? 2))} sont archivées : toujours comptées dans les soldes et consultables (Historique › Archives),
             mais masquées au quotidien. La fenêtre avance automatiquement chaque 1er janvier.
           </span>
         </div>
@@ -155,7 +158,7 @@ export default function Settings() {
         </div>
       </Section>
 
-      <Section title="Taux de change (F CFP)">
+      <Section title="Taux de change">
         <div className="card form">
           <div className="split"><span>1 EUR</span><strong className="num">{EUR_XPF.toFixed(5).replace('.', ',')} F</strong></div>
           <p className="faint" style={{ margin: 0 }}>Parité fixe garantie : 1 000 F CFP = 8,38 €. Aucune approximation pour l'euro.</p>
@@ -167,7 +170,7 @@ export default function Settings() {
                 onBlur={(e) => { const v = parseAmount(e.target.value); if (v > 0) setSettings({ rates: { ...settings.rates, [c.code]: v } }) }} />
             </div>
           ))}
-          <button className="btn" onClick={refresh} disabled={loading}><RefreshCw size={18} />{loading ? 'Mise à jour…' : 'Mettre à jour (BCE)'}</button>
+          <button className="btn" onClick={refresh} disabled={loading}><RefreshCw size={18} />{loading ? 'Mise à jour…' : 'Mettre à jour les taux'}</button>
           <span className="faint">{settings.ratesUpdatedAt ? `Mis à jour le ${formatDate(settings.ratesUpdatedAt.slice(0, 10))}.` : 'Taux par défaut approximatifs : mettez-les à jour.'}</span>
         </div>
       </Section>
@@ -176,8 +179,8 @@ export default function Settings() {
         <div className="card form">
           <p className="faint" style={{ margin: 0 }}>Les données sont enregistrées sur ce téléphone{useStore.getState().sync.householdId ? ' et synchronisées avec votre foyer' : ''}. Gardez aussi une copie de temps en temps.</p>
           <div className="btn-row">
-            <button className="btn" onClick={exportJSON}><Download size={18} />Exporter (JSON)</button>
-            <button className="btn" onClick={() => fileRef.current?.click()}><Upload size={18} />Restaurer</button>
+            <button className="btn" onClick={exportJSON}><Download size={18} />Faire une copie</button>
+            <button className="btn" onClick={() => fileRef.current?.click()}><Upload size={18} />Reprendre une copie</button>
             <input ref={fileRef} type="file" accept="application/json,.json" className="sr-only" onChange={(e) => e.target.files?.[0] && importJSON(e.target.files[0])} />
           </div>
         </div>

@@ -184,6 +184,91 @@ export async function linkHousehold(mode: 'create' | 'join', value: string) {
   await syncNow()
 }
 
+/** Foyer rejoint mais pas encore confirmé : aucune donnée de l'appareil n'a été envoyée (P4). */
+export interface PendingJoin { hid: string; name: string; members: number; code: string }
+
+/**
+ * Rejoindre, étape 1 : s'ajouter au foyer avec le code, puis lire son nom.
+ * Rien n'est envoyé tant que `confirmJoin` n'est pas appelé ; `cancelJoin` retire la personne du foyer.
+ */
+export async function startJoin(value: string): Promise<PendingJoin> {
+  const f = await getFb()
+  const user = await currentUser()
+  if (!f || !user) throw new Error('Connectez-vous d’abord.')
+  const { doc, getDoc, updateDoc, arrayUnion } = f.mod
+  const code = value.trim().toUpperCase()
+  const inv = await getDoc(doc(f.db, 'invites', code))
+  if (!inv.exists()) throw new Error('Code d’invitation inconnu.')
+  const hid = inv.data().householdId as string
+  try {
+    await updateDoc(doc(f.db, 'households', hid), { members: arrayUnion(user.uid), lastJoinCode: code })
+  } catch (e) {
+    if (String(e).includes('permission')) throw new Error('Impossible de rejoindre : le foyer est complet (2 personnes) ou ce code a été changé.')
+    throw e
+  }
+  const h = (await getDoc(doc(f.db, 'households', hid))).data()
+  return { hid, name: (h?.name as string) ?? 'Foyer', members: (h?.members as string[] | undefined)?.length ?? 0, code }
+}
+
+/** Rejoindre, étape 2 (après « Rejoindre le foyer “…” ? ») : les données du foyer font foi, puis envoi des ajouts locaux. */
+export async function confirmJoin(p: PendingJoin) {
+  const f = await getFb()
+  if (!f) return
+  const st = useStore.getState()
+  st.setSync({ householdId: p.hid, householdName: p.name, inviteCode: p.code, lastPulledAt: undefined })
+  const dirty: Record<string, true> = {}
+  for (const k of KINDS) for (const id of Object.keys(st.data[k])) dirty[`${k}:${id}`] = true
+  const { collection, getDocs } = f.mod
+  const snap = await getDocs(collection(f.db, 'households', p.hid, 'records'))
+  snap.forEach((d) => delete dirty[`${d.data().kind}:${d.data().id}`])
+  useStore.setState({ dirty })
+  startRealtime()
+  await syncNow()
+}
+
+/** Rejoindre annulé : on se retire du foyer ; aucune donnée n'est partie. */
+export async function cancelJoin(p: PendingJoin) {
+  const f = await getFb()
+  const user = await currentUser()
+  if (!f || !user) return
+  const { doc, updateDoc, arrayRemove } = f.mod
+  await updateDoc(doc(f.db, 'households', p.hid), { members: arrayRemove(user.uid) }).catch(() => {})
+}
+
+/** Qui a accès au foyer : nombre de comptes Google membres. */
+export async function householdMembers(): Promise<number | null> {
+  const hid = useStore.getState().sync.householdId
+  if (!hid) return null
+  const f = await getFb()
+  if (!f || !(await currentUser())) return null
+  const { doc, getDoc } = f.mod
+  try {
+    const h = await getDoc(doc(f.db, 'households', hid))
+    return (h.data()?.members as string[] | undefined)?.length ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Changer le code d'invitation : nouveau code, foyer mis à jour, ancien code supprimé.
+ * Tolérant : si la suppression est refusée (anciennes règles), l'ancien code ne permet de toute façon
+ * plus d'entrer (les règles exigent le code actuel du foyer).
+ */
+export async function changeInviteCode(): Promise<string> {
+  const f = await getFb()
+  const hid = useStore.getState().sync.householdId
+  const old = useStore.getState().sync.inviteCode
+  if (!f || !hid || !(await currentUser())) throw new Error('Partage non connecté.')
+  const { doc, setDoc, updateDoc, deleteDoc } = f.mod
+  const code = inviteCode()
+  await setDoc(doc(f.db, 'invites', code), { householdId: hid })
+  await updateDoc(doc(f.db, 'households', hid), { inviteCode: code })
+  useStore.getState().setSync({ inviteCode: code })
+  if (old && old !== code) await deleteDoc(doc(f.db, 'invites', old)).catch(() => {})
+  return code
+}
+
 export async function findHousehold(): Promise<boolean> {
   const f = await getFb()
   const user = await currentUser()
@@ -305,10 +390,12 @@ export async function signOut() {
 export async function uploadFile(id: string, blob: Blob, name: string): Promise<boolean> {
   const hid = useStore.getState().sync.householdId
   if (!hid) return false
+  const { safeType } = await import('../lib/attachments')
+  // Seuls les types acceptés par les règles partent ; les autres restent sur l'appareil.
+  if (safeType(blob.type) === 'application/octet-stream') return false
   const f = await getFb()
   if (!f || !hid || !(await currentUser()) || blob.size > 900_000) return false
   const { doc, setDoc, Bytes } = f.mod
-  const { safeType } = await import('../lib/attachments')
   await setDoc(doc(f.db, 'households', hid, 'files', id), { name, type: safeType(blob.type), data: Bytes.fromUint8Array(new Uint8Array(await blob.arrayBuffer())) })
   return true
 }

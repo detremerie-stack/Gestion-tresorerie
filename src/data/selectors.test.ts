@@ -24,10 +24,10 @@ describe('sélecteurs = ancien calcul de l’accueil (v1), sur la fixture au 13/
     // Copie du calcul v1 (Dashboard.tsx, `due`)
     const v1 = [
       ...subs.flatMap((sub) => dueForPayment(sub, T).map((date) => ({ key: sub.id + date, name: sub.name, date }))),
-      ...loans.flatMap((l) => dueInstallments(l, T).map((inst) => ({ key: l.id + inst.date, name: `${l.name} · échéance ${inst.n}`, date: inst.date }))),
+      ...loans.flatMap((l) => dueInstallments(l, T).map((inst) => ({ key: l.id + inst.date, name: `${l.name} · mensualité ${inst.n}`, date: inst.date }))),
     ].sort((a, b) => a.date.localeCompare(b.date))
     expect(dueItems(subs, loans, T).map(({ key, name, date }) => ({ key, name, date }))).toEqual(v1)
-    expect(v1.map((x) => x.name)).toEqual(['Voiture · échéance 21', 'Streaming A']) // relevé à l'écran en v1
+    expect(v1.map((x) => x.name)).toEqual(['Voiture · mensualité 21', 'Streaming A']) // v1 : « Voiture · échéance 21 » (seul le mot change, lot 7)
   })
 
   it('à payer bientôt (30 jours)', () => {
@@ -40,7 +40,7 @@ describe('sélecteurs = ancien calcul de l’accueil (v1), sur la fixture au 13/
         const fee = effectiveFee(sub.currency, acc?.currency, acc?.fxFeePct)
         return { key: sub.id + date, name: sub.name, date, xpf: paymentXPF(sub, rates, fee), approx: !isExact(sub, fee) }
       }),
-      ...loans.flatMap((l) => installmentsBetween(l, from, to).map((inst) => ({ key: l.id + inst.date, name: `${l.name} · échéance`, date: inst.date, xpf: toXPF(inst.total, l.currency, rates), approx: !isFixedRate(l.currency) }))),
+      ...loans.flatMap((l) => installmentsBetween(l, from, to).map((inst) => ({ key: l.id + inst.date, name: `${l.name} · mensualité`, date: inst.date, xpf: toXPF(inst.total, l.currency, rates), approx: !isFixedRate(l.currency) }))),
     ].sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name))
     expect(upcomingItems(subs, loans, accounts, rates, from, to).map(({ key, name, date, xpf, approx }) => ({ key, name, date, xpf, approx }))).toEqual(v1)
     expect(v1.slice(0, 4).map((x) => x.name)).toEqual(['Musique US', 'Essai gratuit', 'Stockage en ligne', 'Assurance annuelle'])
@@ -48,7 +48,7 @@ describe('sélecteurs = ancien calcul de l’accueil (v1), sur la fixture au 13/
 
   it('bloc « à confirmer et à payer d’ici 7 jours » : passés d’abord, puis demain → J+7, 5 lignes max', () => {
     const a = agenda(subs, loans, accounts, rates, T)
-    expect(a.rows.map((r) => `${r.type}:${r.name}`)).toEqual(['due:Voiture · échéance 21', 'due:Streaming A', 'upcoming:Musique US', 'upcoming:Essai gratuit'])
+    expect(a.rows.map((r) => `${r.type}:${r.name}`)).toEqual(['due:Voiture · mensualité 21', 'due:Streaming A', 'upcoming:Musique US', 'upcoming:Essai gratuit'])
     expect(a.until).toBe('2026-11-20')
     expect(agenda(subs, loans, accounts, rates, T, 30, 5).rows).toHaveLength(5)
     expect(agenda([], [], accounts, rates, T).rows).toEqual([])

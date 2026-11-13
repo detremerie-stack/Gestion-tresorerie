@@ -80,3 +80,31 @@ export async function unlockWithBiometric(): Promise<boolean> {
     return false
   }
 }
+
+/* ---------- Délai après erreurs (P5) : un frein, pas une protection forte ---------- */
+const TRIES = 'fare-moni-lock-essais'
+
+/** Attente imposée (secondes) après `failures` codes faux de suite : rien avant 5, puis 30 s, 1 min, 2 min, 5 min. */
+export function lockDelay(failures: number): number {
+  if (failures < 5) return 0
+  return [30, 60, 120][failures - 5] ?? 300
+}
+export function lockTries(): { failures: number; until: number } {
+  try {
+    const t = JSON.parse(localStorage.getItem(TRIES) ?? 'null') as { failures?: number; until?: number } | null
+    return { failures: t?.failures ?? 0, until: t?.until ?? 0 }
+  } catch {
+    return { failures: 0, until: 0 }
+  }
+}
+/** Note un code faux ; renvoie l'heure (ms) avant laquelle il faut attendre (0 si aucune attente). */
+export function recordFailure(now = Date.now()): number {
+  const failures = lockTries().failures + 1
+  const d = lockDelay(failures)
+  const until = d ? now + d * 1000 : 0
+  localStorage.setItem(TRIES, JSON.stringify({ failures, until }))
+  return until
+}
+export function resetFailures() {
+  localStorage.removeItem(TRIES)
+}

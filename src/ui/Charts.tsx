@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { formatMoney } from '../lib/money'
 import { monthLabel } from '../lib/dates'
 import { CatIcon } from './Icon'
@@ -10,6 +10,20 @@ export interface BarItem {
   icon?: string
   color?: string
   sub?: string
+}
+
+/** Largeur réelle du conteneur (340 par défaut) : le SVG est dessiné à sa taille, sans mise à l'échelle du texte. */
+function useWidth(initial = 340) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [w, setW] = useState(initial)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(([e]) => { const v = Math.round(e.contentRect.width); if (v > 0) setW(v) })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return [ref, w] as const
 }
 
 /** Barres horizontales classées, une teinte : comparer des parts (préféré au camembert). */
@@ -30,7 +44,7 @@ export function RankedBars({ items, kind = 'expense', onSelect, total }: { items
                 <span className="faint num">{pct} %</span>
               </div>
               <div className="track">
-                <div className={`bar ${kind}`} style={{ width: `${(i.value / max) * 100}%` }} />
+                <div className={`bar ${kind}${i.color ? ' cat-bar' : ''}`} style={{ width: `${(i.value / max) * 100}%`, ...(i.color ? { '--c': i.color } : {}) } as CSSProperties} />
               </div>
             </div>
             <span className="val num">{formatMoney(i.value)}</span>
@@ -54,7 +68,7 @@ export function Meter({ value, max, label }: { value: number; max: number; label
 /** Colonnes groupées revenus / dépenses par mois, avec info-bulle au toucher ou au survol. */
 export function MonthColumns({ data }: { data: { month: string; income: number; expense: number }[] }) {
   const [hover, setHover] = useState<number | null>(null)
-  const W = 340
+  const [box, W] = useWidth()
   const H = 180
   const padL = 4
   const padB = 22
@@ -66,12 +80,12 @@ export function MonthColumns({ data }: { data: { month: string; income: number; 
   const ticks = [0, max / 2, max]
   const h = hover != null ? data[hover] : null
   return (
-    <div className="colchart">
+    <div className="colchart" ref={box}>
       <div className="chart-legend" aria-hidden="true" style={{ marginBottom: 8 }}>
         <span><i style={{ background: 'var(--chart-income)' }} />Revenus</span>
         <span><i style={{ background: 'var(--chart-expense)' }} />Dépenses</span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Revenus et dépenses par mois" onMouseLeave={() => setHover(null)}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Revenus et dépenses par mois" onMouseLeave={() => setHover(null)}>
         <g className="grid">
           {ticks.map((t) => (
             <line key={t} x1={padL} x2={W} y1={y(t)} y2={y(t)} />
@@ -130,7 +144,7 @@ function niceMax(v: number): number {
 /** Solde de fin de mois prévu : une série, barres ancrées sur zéro ; les mois négatifs sont signalés par le texte. */
 export function BalanceBars({ data }: { data: { month: string; value: number }[] }) {
   const [hover, setHover] = useState<number | null>(null)
-  const W = 340
+  const [box, W] = useWidth()
   const H = 170
   const padB = 22
   const max = Math.max(0, ...data.map((d) => d.value))
@@ -143,8 +157,8 @@ export function BalanceBars({ data }: { data: { month: string; value: number }[]
   const barW = Math.min(22, slot - 8)
   const h = hover != null ? data[hover] : null
   return (
-    <div className="colchart">
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Solde prévu en fin de mois" onMouseLeave={() => setHover(null)}>
+    <div className="colchart" ref={box}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Solde prévu en fin de mois" onMouseLeave={() => setHover(null)}>
         <g className="grid"><line x1={0} x2={W} y1={y(0)} y2={y(0)} /></g>
         {data.map((d, i) => {
           const cx = slot * i + slot / 2

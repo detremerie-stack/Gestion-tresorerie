@@ -65,7 +65,7 @@ export function migratePersisted(persisted: unknown, _fromVersion: number): Stat
 /** Fusion de l'état enregistré avec l'état initial : toutes les collections existent, réglages complétés. */
 export function mergePersisted(persisted: unknown, current: State): State {
   const p = (persisted ?? {}) as PersistedState
-  return { ...current, ...p, data: { ...emptyMaps(), ...(p.data ?? {}) }, settings: { ...current.settings, ...(p.settings ?? {}) } }
+  return { ...current, ...p, data: { ...emptyMaps(), ...p.data }, settings: { ...current.settings, ...p.settings } }
 }
 
 const idbStorage: StateStorage = {
@@ -87,7 +87,7 @@ export const useStore = create<State>()(
         const id = rec.id ?? uid()
         const prev = getState().data[kind][id]
         const next = {
-          ...(prev ?? {}),
+          ...prev,
           ...rec,
           id,
           updatedAt: new Date().toISOString(),

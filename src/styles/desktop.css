@@ -85,3 +85,18 @@
   .home-bref { grid-area: bref; }
   .home-full { grid-column: 1 / -1; }
 }
+
+/* ---------- Historique en colonnes (spécification 21 § 6) ---------- */
+@media (min-width: 900px) and (min-height: 500px) {
+  .history-filters { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .history-filters > .search { flex: 1 1 100%; }
+  .history-filters > .grid-2 { display: flex; gap: 12px; }
+  .history-filters > .grid-2 select:first-child { width: 200px; }
+  .history-filters > .grid-2 select:last-child { width: 180px; }
+  .tx-row, .tx-head { display: grid; grid-template-columns: 40px 76px minmax(0, 1fr) 180px 160px 140px; gap: 12px; align-items: center; }
+  .tx-head { position: sticky; top: 0; z-index: 1; padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text-2); }
+  .tx-head .r { text-align: right; }
+  .tx-row .col-date { color: var(--text-2); font-size: 14px; }
+  .tx-row .col-cat, .tx-row .col-acc { font-size: 14px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tx-table { overflow: clip; }
+}

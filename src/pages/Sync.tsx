@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { QrCode } from '../ui/QrCode'
-import { Cloud, CloudOff, Copy, LogOut, RefreshCw, Share2, Users } from 'lucide-react'
+import { AlertTriangle, Cloud, CloudOff, Copy, KeyRound, LogOut, RefreshCw, Share2, Users } from 'lucide-react'
 import type { User } from 'firebase/auth'
 import { useStore } from '../data/store'
-import { findHousehold, isBuiltIn, isConfigured, linkHousehold, onSyncStatus, onUser, signInGoogle, signOut, startRealtime, syncNow, type SyncStatus } from '../data/sync'
+import { cancelJoin, changeInviteCode, confirmJoin, findHousehold, householdMembers, isBuiltIn, isConfigured, linkHousehold, onSyncStatus, onUser, signInGoogle, signOut, startJoin, startRealtime, syncNow, type PendingJoin, type SyncStatus } from '../data/sync'
+import { Dialog } from '../ui/Dialog'
+import { WipeButton } from '../ui/WipeButton'
 import { Page, Section } from '../ui/Page'
 import { Segmented, TextField } from '../ui/Field'
 import { useToast } from '../ui/toast'
@@ -14,7 +16,7 @@ const frError = (e: unknown) => {
   if (m.includes('invalid-credential') || m.includes('wrong-password')) return 'E-mail ou mot de passe incorrect.'
   if (m.includes('email-already-in-use')) return 'Un compte existe déjà avec cet e-mail : connectez-vous.'
   if (m.includes('weak-password')) return 'Mot de passe trop court (8 caractères minimum).'
-  if (m.includes('permission-denied')) return 'Accès refusé : vérifiez les règles Firestore et le code d’invitation.'
+  if (m.includes('permission-denied') || m.includes('insufficient permissions')) return 'Accès refusé : le foyer est peut-être complet (2 personnes) ou le code a changé.'
   if (m.includes('popup-closed')) return 'Connexion annulée.'
   return m.replace(/^Firebase: /, '')
 }
@@ -31,6 +33,20 @@ export default function SyncPage() {
   const [err, setErr] = useState<string>()
 
   useEffect(() => onSyncStatus(setStatus), [])
+  // Qui a accès : nombre de comptes Google membres du foyer.
+  const [members, setMembers] = useState<number | null>(null)
+  const [askCode, setAskCode] = useState(false)
+  useEffect(() => {
+    if (!user || !sync.householdId) return
+    let alive = true
+    void householdMembers().then((n) => { if (alive) setMembers(n) })
+    return () => { alive = false }
+  }, [user, sync.householdId])
+  const full = members != null && members >= 2
+  const newCode = async () => {
+    setAskCode(false)
+    try { await changeInviteCode(); toast('Nouveau code créé') } catch { toast("Le code n'a pas pu être changé pour l'instant. Rien n'est cassé ; réessayez plus tard.") }
+  }
   useEffect(() => {
     let off: (() => void) | undefined
     void onUser(async (u) => {
@@ -56,12 +72,12 @@ export default function SyncPage() {
   }
 
   return (
-    <Page title="Synchronisation" back>
+    <Page title="Partage" back>
       <div className="callout">
         <Users size={18} />
         <span>Lionel et Véra partagent les mêmes données grâce à <strong>Firebase</strong> (Google). Une personne crée le foyer, l'autre le rejoint avec le code d'invitation. Sans synchronisation, l'app fonctionne seule sur ce téléphone.</span>
       </div>
-      <JoinGuide open={!user || !sync.householdId} code={sync.inviteCode} />
+      <JoinGuide open={!user || !sync.householdId} code={full ? undefined : sync.inviteCode} />
       {!configured ? <ConfigForm /> : !user ? <AuthForm run={run} busy={busy} err={err} /> : !sync.householdId ? <HouseholdForm run={run} busy={busy} err={err} /> : (
         <>
           <div className="card stack">
@@ -71,24 +87,39 @@ export default function SyncPage() {
             </div>
             <span className="faint">Connecté : {user.displayName ?? user.email}</span>
             <span className="faint" role="status">
-              {status.state === 'syncing' ? 'Synchronisation…'
+              {status.state === 'syncing' ? 'Mise à jour…'
                 : status.state === 'error' ? `Erreur : ${frError(status.message)}`
                   : status.state === 'offline' ? status.message
                     : pending ? `${pending} modification(s) en attente d'envoi`
                       : status.lastSyncAt ? `À jour (${new Date(status.lastSyncAt).toLocaleTimeString('fr-FR')})` : 'À jour'}
             </span>
-            <button className="btn" disabled={status.state === 'syncing'} onClick={() => void syncNow()}><RefreshCw size={18} />Synchroniser maintenant</button>
+            <button className="btn" disabled={status.state === 'syncing'} onClick={() => void syncNow()}><RefreshCw size={18} />Mettre à jour maintenant</button>
           </div>
-          <Section title="Inviter l'autre membre">
+          <Section title={members != null ? `Qui a accès : ${members} personne${members > 1 ? 's' : ''}` : 'Qui a accès'}>
             <div className="card stack">
-              <span className="muted">Sur son téléphone : Plus › Synchronisation, se connecter avec Google, puis « Rejoindre » avec ce code :</span>
-              <div className="split">
-                <strong style={{ fontSize: 28, letterSpacing: '0.12em' }} className="num">{sync.inviteCode}</strong>
-                <button className="btn sm" onClick={() => { void navigator.clipboard?.writeText(sync.inviteCode ?? ''); toast('Code copié') }}><Copy size={16} />Copier</button>
-              </div>
+              {members != null && members > 2 && (
+                <div className="callout danger-callout"><AlertTriangle size={18} /><span>Plus de 2 personnes ont accès. Si vous ne reconnaissez pas quelqu'un, changez le code tout de suite.</span></div>
+              )}
+              {full ? (
+                <span className="muted">Le foyer est complet (2 personnes). Le code d'invitation est masqué.</span>
+              ) : (
+                <>
+                  <span className="muted">Sur son téléphone : Menu › Partage, se connecter avec Google, puis « Rejoindre » avec ce code :</span>
+                  <div className="split">
+                    <strong style={{ fontSize: 28, letterSpacing: '0.12em' }} className="num">{sync.inviteCode}</strong>
+                    <button className="btn sm" onClick={() => { void navigator.clipboard?.writeText(sync.inviteCode ?? ''); toast('Code copié') }}><Copy size={16} />Copier</button>
+                  </div>
+                </>
+              )}
+              <button className="btn" onClick={() => setAskCode(true)}><KeyRound size={18} />Changer le code</button>
             </div>
           </Section>
+          <Dialog open={askCode} onClose={() => setAskCode(false)} title="Changer le code d'invitation ?"
+            actions={<><button className="btn primary" onClick={() => void newCode()}>Changer le code</button><button className="btn" data-autofocus onClick={() => setAskCode(false)}>Annuler</button></>}>
+            <p style={{ margin: 0 }}>L'ancien ne marchera plus. Les téléphones déjà connectés ne sont pas touchés.</p>
+          </Dialog>
           <button className="btn danger" onClick={() => void signOut().then(() => toast('Déconnecté. Les données restent sur ce téléphone.'))}><LogOut size={18} />Se déconnecter</button>
+          <WipeButton />
         </>
       )}
       {configured && !isBuiltIn() && (
@@ -121,7 +152,7 @@ function JoinGuide({ open, code }: { open: boolean; code?: string }) {
       <ol className="stack" style={{ margin: '12px 0 0', paddingLeft: 22, gap: 10 }}>
         <li>Scannez le QR code ci-dessus (ou ouvrez l'adresse <strong>{appUrl}</strong>) dans <strong>Chrome</strong> sur le téléphone, puis menu <strong>⋮ › Installer l'application</strong>.</li>
         <li>Au premier lancement, choisissez votre prénom puis <strong>« Commencer à vide »</strong> (ne pas reprendre les abonnements : ils sont déjà dans le foyer).</li>
-        <li>Allez dans <strong>Plus › Synchronisation</strong> et touchez <strong>« Continuer avec Google »</strong> ; choisissez votre propre compte Google.</li>
+        <li>Allez dans <strong>Menu › Partage</strong> et touchez <strong>« Continuer avec Google »</strong> ; choisissez votre propre compte Google.</li>
         <li>Choisissez <strong>« Rejoindre »</strong> et tapez le code d'invitation{code ? <> : <strong className="num" style={{ letterSpacing: '0.1em' }}>{code}</strong></> : ' (visible sur le téléphone de la personne qui a créé le foyer, dans cette même page)'}, puis <strong>« Rejoindre »</strong>.</li>
         <li>Patientez quelques secondes : comptes, opérations, prêt, abonnements et prévisions apparaissent. Ensuite, tout ce que l'un saisit apparaît chez l'autre.</li>
       </ol>
@@ -162,15 +193,23 @@ function HouseholdForm({ run, busy, err }: { run: (fn: () => Promise<void>) => P
   const [value, setValue] = useState(invited ?? 'Lionel & Véra')
   const onboarded = useStore((s) => s.onboarded)
   const [me, setMe] = useState('m-vera')
-  const go = () => run(async () => {
-    await linkHousehold(mode, value.trim())
+  // P4 : en « Rejoindre », on lit d'abord le nom du foyer et on demande confirmation ; rien n'est envoyé avant.
+  const [pending, setPending] = useState<PendingJoin>()
+  const finish = () => {
     // Arrivé par le QR code sans passer par l'accueil : on termine l'accueil sans recréer de données par défaut
     // (elles écraseraient celles du foyer).
     if (!useStore.getState().onboarded) {
       useStore.setState({ onboarded: true })
       useStore.getState().setSettings({ currentMember: me })
     }
+  }
+  const go = () => run(async () => {
+    if (mode === 'join') { setPending(await startJoin(value.trim())); return }
+    await linkHousehold(mode, value.trim())
+    finish()
   })
+  const accept = () => { const p = pending!; setPending(undefined); void run(async () => { await confirmJoin(p); finish() }) }
+  const refuse = () => { const p = pending; setPending(undefined); if (p) void cancelJoin(p) }
   return (
     <Section title="Foyer">
       <div className="card form">
@@ -186,6 +225,10 @@ function HouseholdForm({ run, busy, err }: { run: (fn: () => Promise<void>) => P
         )}
         <button className="btn primary" disabled={busy || !value.trim()} onClick={() => void go()}>{busy ? 'Patientez…' : mode === 'create' ? 'Créer' : 'Rejoindre'}</button>
       </div>
+      <Dialog open={!!pending} onClose={refuse} title={`Rejoindre le foyer « ${pending?.name ?? ''} » ?`}
+        actions={<><button className="btn primary" onClick={accept}>Rejoindre</button><button className="btn" data-autofocus onClick={refuse}>Annuler</button></>}>
+        <p style={{ margin: 0 }}>Vos données de cet appareil y seront partagées avec les personnes du foyer. Continuez seulement si ce code vient de Lionel ou de Véra.</p>
+      </Dialog>
     </Section>
   )
 }
