@@ -43,6 +43,7 @@ export default function Subscriptions() {
   return (
     <Page
       title="Abonnements"
+      wide
       aside={
         <button className="btn sm" style={{ border: 0, flexDirection: 'column', gap: 0, alignItems: 'flex-end', minHeight: 44 }}
           onClick={() => setSettings({ subscriptionsView: view === 'month' ? 'year' : 'month' })} aria-label="Basculer mensuel / annuel">

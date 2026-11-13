@@ -148,7 +148,7 @@ export default function Import() {
   const uncategorized = toImport.filter((p) => !p.rule).length
 
   return (
-    <Page title="Importer un relevé" back>
+    <Page title="Importer un relevé" back wide>
       <div className="card form">
         <SelectField label="Compte" value={accountId} onChange={(v) => { setAccountId(v); setRows(null); setOfxRows(null); setFileName('') }}
           options={accounts.map((a) => ({ value: a.id, label: `${a.name} (${a.currency})` }))} />

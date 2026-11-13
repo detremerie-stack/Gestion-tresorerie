@@ -41,7 +41,7 @@ export default function Reports() {
   }, [inPeriod, accounts, rates])
 
   return (
-    <Page title="Rapports" back>
+    <Page title="Rapports" back wide>
       <Segmented label="Période" value={period} onChange={setPeriod} options={[{ value: '1', label: 'Ce mois' }, { value: '3', label: '3 mois' }, { value: '6', label: '6 mois' }, { value: '12', label: '12 mois' }]} />
 
       <div className="card kpis">

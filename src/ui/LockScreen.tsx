@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { pinKey } from './keys'
 import { Delete, Fingerprint } from 'lucide-react'
 import { checkPin, hasBiometric, isLockEnabled, unlockWithBiometric } from '../lib/lock'
 
@@ -13,6 +14,19 @@ export function PinPad({ title, subtitle, error, onComplete, extra }: { title: s
     setPin(next)
     if (next.length === 4) setTimeout(() => { onComplete(next); setPin('') }, 120)
   }
+  // Clavier (PC) : chiffres et Retour arrière.
+  const pressRef = useRef(press)
+  pressRef.current = press
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const k = pinKey(e)
+      if (!k) return
+      e.preventDefault()
+      pressRef.current(k)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   return (
     <div className="lock">
       <img src="./icon.svg" alt="" width={64} height={64} style={{ borderRadius: 16 }} />
@@ -46,8 +60,10 @@ export function LockGate({ children }: { children: React.ReactNode }) {
   useEffect(() => { if (locked && hasBiometric()) void bio() }, [locked])
   if (!locked) return <>{children}</>
   return (
+    <div className="lock-gate">
     <PinPad title="Fare Moni" subtitle="Entrez votre code" error={error}
       onComplete={async (pin) => { if (await checkPin(pin)) { setError(undefined); setLocked(false) } else setError('Code incorrect') }}
       extra={hasBiometric() ? <button type="button" aria-label="Déverrouiller avec l'empreinte" onClick={() => void bio()}><Fingerprint size={24} /></button> : null} />
+    </div>
   )
 }

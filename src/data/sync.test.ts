@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Firebase factice : on note seulement s'il a été chargé.
-const loaded = vi.hoisted(() => ({ app: 0, auth: 0, firestore: 0 }))
+const loaded = vi.hoisted(() => ({ app: 0, auth: 0, firestore: 0, redirect: 0 }))
 vi.mock('firebase/app', () => {
   loaded.app++
   return { initializeApp: () => ({}), getApps: () => [], deleteApp: async () => {} }
@@ -9,7 +9,7 @@ vi.mock('firebase/app', () => {
 vi.mock('firebase/auth', () => {
   loaded.auth++
   const auth = { authStateReady: async () => {}, currentUser: null }
-  return { getAuth: () => auth, setPersistence: async () => {}, browserLocalPersistence: {}, onAuthStateChanged: () => () => {} }
+  return { getAuth: () => auth, setPersistence: async () => {}, browserLocalPersistence: {}, onAuthStateChanged: () => () => {}, getRedirectResult: async () => { loaded.redirect++; return null }, GoogleAuthProvider: class {}, signInWithPopup: async () => { throw new Error('Firebase: Error (auth/popup-blocked).') }, signInWithRedirect: async () => {} }
 })
 vi.mock('firebase/firestore', () => {
   loaded.firestore++
@@ -27,10 +27,12 @@ const doc = Object.assign(new EventTarget(), { visibilityState: 'visible' })
 vi.stubGlobal('window', win)
 vi.stubGlobal('document', doc)
 vi.stubGlobal('navigator', { onLine: true })
+const store = new Map<string, string>()
+vi.stubGlobal('sessionStorage', { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, v) }, removeItem: (k: string) => { store.delete(k) } })
 vi.stubEnv('VITE_FIREBASE_CONFIG', '{"apiKey":"k","projectId":"p"}')
 
 const { useStore } = await import('./store')
-const { initSync, syncNow, onSyncStatus, uploadFile, downloadFile } = await import('./sync')
+const { initSync, syncNow, onSyncStatus, uploadFile, downloadFile, redirectPending, signInGoogle } = await import('./sync')
 
 const flush = () => new Promise((r) => setTimeout(r, 20))
 const total = () => loaded.app + loaded.auth + loaded.firestore
@@ -88,5 +90,28 @@ describe('foyer lié', () => {
     expect(loaded.auth).toBe(1)
     expect(loaded.firestore).toBe(1)
     stop()
+  })
+})
+
+describe('retour d’une connexion Google par redirection', () => {
+  it('sans indicateur : rien ; avec indicateur posé avant la redirection : Firebase chargé et résultat lu, même sans foyer', async () => {
+    useStore.setState({ sync: {} })
+    expect(redirectPending()).toBe(false)
+    let stop = initSync()
+    await flush()
+    expect(loaded.redirect).toBe(0)
+    stop()
+    store.set('fare-moni-retour-google', '1')
+    expect(redirectPending()).toBe(true)
+    stop = initSync()
+    await flush()
+    expect(loaded.redirect).toBe(1)
+    expect(redirectPending()).toBe(false) // indicateur effacé : une seule fois
+    stop()
+  })
+  it('fenêtre bloquée : l’indicateur est posé avant de partir chez Google', async () => {
+    await signInGoogle()
+    expect(redirectPending()).toBe(true)
+    store.clear()
   })
 })

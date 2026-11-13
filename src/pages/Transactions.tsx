@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { Archive, ChevronLeft, ChevronRight, ListX, Paperclip, Search, Upload } from 'lucide-react'
 import { useMap, useStore } from '../data/store'
 import { COMMON, useAccounts, useMemberName, useMembers, useTransactions } from '../data/hooks'
@@ -13,6 +13,8 @@ import { Empty, Page } from '../ui/Page'
 import { CatIcon } from '../ui/Icon'
 
 export default function Transactions() {
+  // Raccourci « / » : arrivée sur l'Historique avec le curseur dans la recherche.
+  const focusSearch = (useLocation().state as { focusSearch?: boolean } | null)?.focusSearch
   const [params, setParams] = useSearchParams()
   const rates = useStore((s) => s.settings.rates)
   const all = useTransactions()
@@ -69,11 +71,11 @@ export default function Transactions() {
   const activeCat = catId && catId !== 'none' ? cats.get(catId) : undefined
 
   return (
-    <Page title="Historique" actions={<Link to="/import" className="icon-btn" aria-label="Importer un relevé"><Upload size={20} /></Link>}>
+    <Page title="Historique" wide actions={<Link to="/import" className="icon-btn" aria-label="Importer un relevé"><Upload size={20} /></Link>}>
       <div className="stack" style={{ gap: 12 }}>
         <div className="search">
           <Search size={18} />
-          <input className="input" type="search" placeholder="Rechercher (toutes périodes)…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
+          <input id="historique-recherche" className="input" type="search" placeholder="Rechercher (toutes périodes)…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" autoFocus={!!focusSearch} />
         </div>
         {!q && (
           <div className="month-nav">

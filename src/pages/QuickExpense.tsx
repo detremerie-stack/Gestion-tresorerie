@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Camera, Delete, HelpCircle, Plane, X } from 'lucide-react'
+import { ArrowLeftRight, Camera, Delete, HelpCircle, Plane, Repeat, TrendingDown, TrendingUp, X } from 'lucide-react'
+import { Dialog } from '../ui/Dialog'
 import { useList, useMap, useStore } from '../data/store'
 import { COMMON, useAccounts, useCategories, useMembers } from '../data/hooks'
 import { addInterval, today } from '../lib/dates'
@@ -16,6 +17,16 @@ import { isValidAmount, knownCurrency, quickParams } from '../lib/quick'
 import { cleanLabel, matchRule } from '../lib/rules'
 import { CatIcon } from '../ui/Icon'
 import { useToast } from '../ui/toast'
+import { quickKey } from '../ui/keys'
+
+/** Choix « Autre chose ? » (Q5) : tout ce qui n'est pas une dépense rapide. */
+const OTHER = [
+  { to: '/operations/nouvelle?type=income', icon: <TrendingUp size={22} className="income" />, label: 'Revenu' },
+  { to: '/operations/nouvelle?type=transfer', icon: <ArrowLeftRight size={22} />, label: 'Entre nos comptes' },
+  { to: '/operations/nouvelle?type=expense', icon: <TrendingDown size={22} />, label: 'Dépense détaillée' },
+  { to: '/abonnements/nouveau', icon: <Repeat size={22} />, label: 'Abonnement' },
+  { to: '/voyages/nouveau', icon: <Plane size={22} />, label: 'Voyage' },
+]
 
 /**
  * Saisie express d'une dépense. Accepte des paramètres d'URL (automatisation Wallet) :
@@ -109,6 +120,7 @@ export default function QuickExpense() {
   const [date, setDate] = useState(today())
   const [showAll, setShowAll] = useState(false)
   const [creatingCat, setCreatingCat] = useState(false)
+  const [other, setOther] = useState(false)
 
   const value = parseAmount(digits || '0')
   const account = accountsMap.get(accountId)
@@ -148,11 +160,34 @@ export default function QuickExpense() {
     nav('/', { replace: true })
   }
 
+  // Fermer : retour à l'écran précédent, ou à l'accueil si l'on est arrivé directement ici (raccourci, MacroDroid).
+  const close = () => ((window.history.state as { idx?: number } | null)?.idx ? nav(-1) : nav('/', { replace: true }))
+
+  // Clavier (PC) : chiffres, virgule, Retour arrière, Entrée = enregistrer, Échap = fermer.
+  const keyRef = useRef({ press, save, close })
+  keyRef.current = { press, save, close }
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (document.querySelector('dialog[open]')) return
+      const k = quickKey(e)
+      if (!k) return
+      const t = e.target as HTMLElement | null
+      // Entrée sur un lien ou un bouton d'en-tête (✕, ?) ou « Autre chose » : action normale du bouton.
+      if (k === 'save' && t?.closest?.('a, .page-header, [data-native-enter]')) return
+      e.preventDefault()
+      if (k === 'close') keyRef.current.close()
+      else if (k === 'save') keyRef.current.save()
+      else keyRef.current.press(k)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   const cats = showAll ? topCats : topCats.slice(0, 7)
   return (
     <main className="page quick">
       <header className="page-header">
-        <button className="icon-btn" aria-label="Fermer" onClick={() => nav(-1)}><X size={22} /></button>
+        <button className="icon-btn" aria-label="Fermer" onClick={close}><X size={22} /></button>
         <h1>Dépense rapide</h1>
         <Link to="/parametres/wallet" className="icon-btn" aria-label="Paiements Wallet automatiques"><HelpCircle size={20} /></Link>
       </header>
@@ -225,10 +260,16 @@ export default function QuickExpense() {
           <button key={k} type="button" onClick={() => press(k)} aria-label={k === '⌫' ? 'Effacer' : k}>{k === '⌫' ? <Delete size={22} /> : k}</button>
         ))}
       </div>
-      <Link to="/operations/nouvelle?type=income" replace className="faint" style={{ textAlign: 'center' }}>Autre chose ? Revenu, virement, dépense détaillée</Link>
+      <button type="button" className="quick-other" data-native-enter onClick={() => setOther(true)}>Autre chose ? Revenu, virement, abonnement…</button>
+      <Dialog open={other} onClose={() => setOther(false)} title="Autre chose ?">
+        <div className="quick-grid">
+          {OTHER.map((i) => <Link key={i.to} to={i.to} replace>{i.icon}{i.label}</Link>)}
+        </div>
+      </Dialog>
       <button className="btn primary block quick-save" disabled={!isValidAmount(value) || !account} onClick={save}>
         Enregistrer {isValidAmount(value) ? formatMoney(value, currency) : ''}
       </button>
+      <p className="quick-hint desk-only">Tapez le montant au clavier · <kbd>Entrée</kbd> enregistrer · <kbd>Échap</kbd> fermer</p>
     </main>
   )
 }

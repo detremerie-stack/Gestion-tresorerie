@@ -63,7 +63,7 @@ export default function Statement() {
   }
 
   return (
-    <Page title="Relevé" back>
+    <Page title="Relevé" back wide>
       <div className="card form no-print">
         <SelectField label="Compte" value={accountId} onChange={setAccountId} options={accounts.map((a) => ({ value: a.id, label: a.name }))} />
         <div className="grid-2">

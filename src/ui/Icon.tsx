@@ -1,5 +1,6 @@
 import * as L from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import type { CSSProperties } from 'react'
 import { normalize } from '../lib/id'
 
 /**
@@ -66,7 +67,8 @@ export function Icon({ name, size = 20 }: { name?: string; size?: number }) {
 
 export function CatIcon({ icon, color, small }: { icon?: string; color?: string; small?: boolean }) {
   return (
-    <span className={`cat-icon${small ? ' sm' : ''}`} style={{ background: color ?? '#6B7280' }}>
+    // Couleur enregistrée inchangée : elle est seulement adoucie à l'affichage (pastille, voir app.css).
+    <span className={`cat-icon${small ? ' sm' : ''}`} style={{ '--c': color || '#6B7280' } as CSSProperties}>
       <Icon name={icon} size={small ? 16 : 20} />
     </span>
   )

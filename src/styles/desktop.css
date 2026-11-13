@@ -1,0 +1,87 @@
+/*
+ * Fare Moni — PC (spécification 21 § 2 à § 6). Tout est additif : rien ne change sous 900 px de large,
+ * ni sous 500 px de haut (un téléphone couché reste en mode téléphone).
+ * Les media queries ne lisent pas les variables : 900px et 1280px sont écrits en dur.
+ */
+
+/* Masquer sur PC / masquer sur téléphone */
+@media (min-width: 900px) and (min-height: 500px) {
+  .phone-only { display: none !important; }
+
+  /* ---------- Coquille ---------- */
+  .nav { display: none; }
+  .side {
+    display: flex; flex-direction: column; gap: 4px; position: fixed; inset: 0 auto 0 0; z-index: 20;
+    width: var(--side-w); padding: 20px 12px; background: var(--side-bg); color: var(--side-text);
+    overflow-y: auto; border-right: var(--side-border);
+  }
+  .side > * { flex-shrink: 0; }
+  .side nav { display: flex; flex-direction: column; gap: 4px; }
+  .side .side-foot { margin-top: auto; }
+  .side-brand { display: flex; align-items: center; gap: 10px; height: 40px; margin: 0 8px 16px; color: #fff; font-size: 18px; font-weight: 700; }
+  .side-brand img { border-radius: 9px; box-shadow: 0 0 0 2px rgb(255 255 255 / 25%); }
+  .side-new {
+    display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; margin: 0 4px 16px;
+    border-radius: var(--r-pill); background: #FFFDF9; color: #0B5F75; font-size: 15px; font-weight: 700;
+  }
+  .side-new kbd { border-color: #8FB3BD; color: #0B5F75; }
+  .side-new:hover { background: #FFFFFF; box-shadow: var(--shadow); }
+  .side nav a {
+    position: relative; display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px;
+    border-radius: 10px; color: var(--side-text); font-size: 15px;
+  }
+  .side nav a svg { flex: none; }
+  .side nav a:hover { background: var(--side-hover); }
+  .side nav a.active { background: var(--side-active); color: #fff; font-weight: 600; }
+  .side nav a.active::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--sun); }
+  .side :focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+  .side hr { border: 0; border-top: 1px solid rgb(255 255 255 / 14%); margin: 8px 12px; }
+
+  .app { margin-left: var(--side-w); padding-bottom: 0; }
+
+  /* ---------- Pages ---------- */
+  .page { max-width: var(--form-max); padding: 32px; gap: 32px; }
+  .page.wide { max-width: var(--content-max); }
+  .page-header h1 { font-size: 28px; }
+  .sticky-actions { bottom: 24px; }
+  .toast { bottom: 24px; left: calc(50% + 120px); }
+
+  /* ---------- Boîte de dialogue centrée ---------- */
+  .dialog { inset: 0; margin: auto; width: min(var(--dialog-w), 100vw - 64px); max-height: calc(100vh - 64px); border-radius: 20px; box-shadow: 0 20px 60px rgb(0 0 0 / 30%); animation: fade 0.15s ease-out; }
+  .dialog-body { padding: 24px; }
+  .dialog-actions { flex-direction: row; justify-content: flex-end; }
+  .dialog-actions .btn { width: auto; }
+
+  /* ---------- Saisie rapide : panneau sur le lagon ---------- */
+  /* « safe » : si le panneau est plus haut que l'écran, il commence en haut au lieu d'être coupé. */
+  .app:has(.quick) { margin-left: 0; min-height: 100vh; background: var(--lagoon); display: grid; justify-items: center; align-items: safe center; padding: 32px; }
+  .page.quick { width: 460px; max-width: 100%; margin: 0; padding: 16px 20px 20px; gap: 10px; background: var(--surface); border-radius: 24px; box-shadow: 0 20px 60px rgb(0 0 0 / 30%); }
+  .page.quick .page-header h1 { font-size: 20px; }
+  .quick .keypad button { background: var(--surface-2); box-shadow: none; min-height: 48px; }
+  @media (hover: hover) { .quick .keypad button:hover { background: var(--hover); } }
+
+  /* ---------- Verrou : carte sur le lagon ---------- */
+  .lock-gate { min-height: 100vh; background: var(--lagoon); display: grid; justify-items: center; align-items: safe center; padding: 32px; }
+  .lock-gate .lock { min-height: 0; width: 420px; max-width: 100%; background: var(--surface); border-radius: 24px; padding: 32px; box-shadow: 0 20px 60px rgb(0 0 0 / 30%); }
+}
+
+/* ---------- Accueil (spécification 21 § 3) ---------- */
+@media (min-width: 900px) and (min-height: 500px) {
+  .page.home { max-width: 760px; }
+  .home-hero { padding: 28px 32px; }
+  .home-hero .banner-amount { font-size: 48px; }
+}
+@media (min-width: 1280px) and (min-height: 500px) {
+  .page.home {
+    max-width: var(--content-max); display: grid; gap: 32px; align-items: start;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    grid-template-areas: "hero conf" "mois rec" "lim bref";
+  }
+  .home-hero { grid-area: hero; }
+  .home-conf { grid-area: conf; }
+  .home-mois { grid-area: mois; }
+  .home-rec { grid-area: rec; }
+  .home-lim { grid-area: lim; }
+  .home-bref { grid-area: bref; }
+  .home-full { grid-column: 1 / -1; }
+}

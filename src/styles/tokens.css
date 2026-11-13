@@ -1,84 +1,136 @@
+/* Fare Moni — jetons v2 (spécification 21-specs-designer, retouches 23-decoratrice). */
 :root {
   color-scheme: light;
-  --bg: #f4f6f7;
-  --surface: #ffffff;
-  --surface-2: #eef2f3;
-  --border: #dde4e6;
-  --text: #0b1a20;
-  --text-2: #4a5a60;
-  --text-3: #5f6f74;
-  --primary: #0e7490;
-  --primary-soft: #d7eef4;
-  --on-primary: #ffffff;
-  --income: #0f7a3d;
-  --expense: #b42318;
-  --warning: #b45309;
-  --warning-soft: #fef3c7;
-  --danger-soft: #fde8e6;
-  --chart-income: #0891b2;
-  --chart-expense: #eb6834;
-  --nav-bg: #ffffff;
-  --shadow: 0 1px 2px rgb(11 26 32 / 6%), 0 4px 16px rgb(11 26 32 / 6%);
+  /* Neutres sable */
+  --bg: #F6F3EE;
+  --surface: #FFFDF9;
+  --surface-2: #EFEAE2;      /* segments, en-têtes de jour, pastilles neutres : JAMAIS de texte coloré dessus */
+  --hover: #F3EFE9;          /* survol des lignes (montants lisibles dessus) */
+  --border: #E4DDD2;         /* séparateurs décoratifs */
+  --field-border: #8F877B;   /* bord des champs et puces non pressées : 3,49:1 */
+  --text: #1A2326;
+  --text-2: #55605F;
+  --text-3: #5F6866;
+  /* Action (lagon) */
+  --primary: #0E7490;
+  --primary-soft: #E2F0F2;
+  --on-primary: #FFFFFF;
+  --btn-primary: #0E7490;
+  /* Argent */
+  --expense: #B8442A;        /* corail brûlé : sorties ordinaires */
+  --income: #2F7A3E;         /* feuille de cocotier : entrées */
+  --danger: #B42318;         /* SEULEMENT dépassement, solde négatif, suppression */
+  --danger-soft: #FBE7E3;
+  --on-danger: #FFFFFF;
+  --warning: #9A5B0B;
+  --warning-soft: #FBEFD5;
+  --chart-income: #0E7490;
+  --chart-expense: #D9663F;
+  /* Matière */
+  --nav-bg: #FFFDF9;
+  --shadow: 0 1px 2px rgb(26 35 38 / 6%), 0 4px 16px rgb(26 35 38 / 6%);
+  --card-ring: 0 0 #0000;
+  --lagoon: linear-gradient(140deg, #0C6680 0%, #125A70 55%, #164E63 100%);
+  --side-bg: linear-gradient(180deg, #0B5E74 0%, #123F4D 100%);
+  --side-text: rgb(255 255 255 / 85%);
+  --side-active: rgb(255 255 255 / 16%);
+  --side-hover: rgb(255 255 255 / 8%);
+  --sun: #FFD166;
+  --pastille-bg: 15%;        /* part de la couleur de catégorie dans le fond */
+  --pastille-ink: #000;      /* couleur de l'icône = catégorie 70 % + ceci 30 % */
+  --pastille-ink-mix: 70%;
+  /* Barres de catégories adoucies : clair vers la surface, sombre vers le blanc (23-decoratrice) */
+  --bar-mix-with: var(--surface);
+  --bar-mix: 75%;
+  --side-border: 0 solid transparent;
 
-  --s1: 4px;
-  --s2: 8px;
-  --s3: 12px;
-  --s4: 16px;
-  --s5: 24px;
-  --s6: 32px;
-  --s8: 48px;
-  --r-field: 10px;
-  --r-card: 16px;
-  --r-pill: 999px;
-  --tap: 44px;
-  --nav-h: 64px;
+  /* Espacements, rayons (inchangés) */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s8: 48px;
+  --r-field: 10px; --r-card: 16px; --r-pill: 999px;
+  --tap: 44px; --nav-h: 64px;
+  /* Mise en page (nouveau) — les media queries utilisent les valeurs en dur 900px / 1280px */
+  --bp-desktop: 900px;
+  --bp-wide: 1280px;
+  --side-w: 240px;
+  --content-max: 1200px;
+  --form-max: 720px;
+  --dialog-w: 480px;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Sombre « nuit de lagon » — même bloc pour [data-theme='dark'] et pour le mode Auto */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0C1517;
+  --surface: #14211F;
+  --surface-2: #1C2C2A;
+  --hover: #1A2A28;
+  --border: #2A3B39;
+  --field-border: #5F7471;
+  --text: #EDF2F0;
+  --text-2: #A8B8B4;
+  --text-3: #93A39F;
+  --primary: #3BB3CF;
+  --primary-soft: #123A42;
+  --on-primary: #04212A;
+  --btn-primary: #22A3C4;
+  --expense: #FF9A80;
+  --income: #6FD08A;
+  --danger: #FF6F61;
+  --danger-soft: #3A1A16;
+  --on-danger: #2A0B07;
+  --warning: #F2B544;
+  --warning-soft: #3A2C0B;
+  --chart-income: #3BB3CF;
+  --chart-expense: #E07A55;
+  --nav-bg: #111C1B;
+  --shadow: 0 0 #0000;
+  --card-ring: inset 0 0 0 1px rgb(255 255 255 / 6%);
+  --lagoon: linear-gradient(140deg, #0A5266 0%, #0F4A5C 55%, #123F50 100%);
+  --side-bg: linear-gradient(180deg, #08404F 0%, #0B262E 100%);
+  --pastille-bg: 22%;
+  --pastille-ink: #fff;
+  --pastille-ink-mix: 55%;
+  --bar-mix-with: #fff;
+  --bar-mix: 70%;
+  --side-border: 1px solid rgb(255 255 255 / 6%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme='light'])) {
     color-scheme: dark;
-    --bg: #0f1416;
-    --surface: #182024;
-    --surface-2: #212b30;
-    --border: #2c393f;
-    --text: #eef3f4;
-    --text-2: #a9b8bd;
-    --text-3: #7d8d92;
-    --primary: #22a3c4;
-    --primary-soft: #12343e;
-    --on-primary: #00222c;
-    --income: #4ade80;
-    --expense: #ff8a7a;
-    --warning: #fbbf24;
-    --warning-soft: #3a2c0b;
-    --danger-soft: #3b1714;
-    --chart-income: #22a3c4;
-    --chart-expense: #d95926;
-    --nav-bg: #141b1e;
-    --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 25%);
-  }
+    --bg: #0C1517;
+    --surface: #14211F;
+    --surface-2: #1C2C2A;
+    --hover: #1A2A28;
+    --border: #2A3B39;
+    --field-border: #5F7471;
+    --text: #EDF2F0;
+    --text-2: #A8B8B4;
+    --text-3: #93A39F;
+    --primary: #3BB3CF;
+    --primary-soft: #123A42;
+    --on-primary: #04212A;
+    --btn-primary: #22A3C4;
+    --expense: #FF9A80;
+    --income: #6FD08A;
+    --danger: #FF6F61;
+    --danger-soft: #3A1A16;
+    --on-danger: #2A0B07;
+    --warning: #F2B544;
+    --warning-soft: #3A2C0B;
+    --chart-income: #3BB3CF;
+    --chart-expense: #E07A55;
+    --nav-bg: #111C1B;
+    --shadow: 0 0 #0000;
+    --card-ring: inset 0 0 0 1px rgb(255 255 255 / 6%);
+    --lagoon: linear-gradient(140deg, #0A5266 0%, #0F4A5C 55%, #123F50 100%);
+    --side-bg: linear-gradient(180deg, #08404F 0%, #0B262E 100%);
+    --pastille-bg: 22%;
+    --pastille-ink: #fff;
+    --pastille-ink-mix: 55%;
+    --bar-mix-with: #fff;
+    --bar-mix: 70%;
+    --side-border: 1px solid rgb(255 255 255 / 6%);
 }
-
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --bg: #0f1416;
-  --surface: #182024;
-  --surface-2: #212b30;
-  --border: #2c393f;
-  --text: #eef3f4;
-  --text-2: #a9b8bd;
-  --text-3: #7d8d92;
-  --primary: #22a3c4;
-  --primary-soft: #12343e;
-  --on-primary: #00222c;
-  --income: #4ade80;
-  --expense: #ff8a7a;
-  --warning: #fbbf24;
-  --warning-soft: #3a2c0b;
-  --danger-soft: #3b1714;
-  --chart-income: #22a3c4;
-  --chart-expense: #d95926;
-  --nav-bg: #141b1e;
-  --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 25%);
 }

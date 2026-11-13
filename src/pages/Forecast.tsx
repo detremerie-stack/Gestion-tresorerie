@@ -57,12 +57,12 @@ export default function Forecast() {
   const nextOf = (p: Planned) => plannedOccurrences(p, t, addInterval(t, 2, 'year'))[0]
 
   return (
-    <Page title="Les mois à venir" back>
+    <Page title="Les mois à venir" back wide>
       <Segmented label="Horizon" value={horizon} onChange={setHorizon} options={[{ value: '3', label: '3 mois' }, { value: '6', label: '6 mois' }, { value: '12', label: '12 mois' }]} />
       <div className="card kpis">
         <div className="kpi"><span className="label">Aujourd'hui</span><Money className="value" value={balances.total} approx={balances.approx} /></div>
         <div className="kpi"><span className="label">Fin {monthLabel(end.month, true)}</span><Money className={`value ${end.endBalance < 0 ? 'expense' : ''}`} value={end.endBalance} approx /></div>
-        <div className="kpi"><span className="label">Au plus bas</span><Money className={`value ${low.endBalance < 0 ? 'expense' : ''}`} value={low.endBalance} approx /><span className="faint" style={{ textTransform: 'capitalize' }}>fin {monthLabel(low.month)}</span></div>
+        <div className="kpi"><span className="label">Au plus bas d'ici {monthLabel(end.month).split(' ')[0]}</span><Money className={`value ${low.endBalance < 0 ? 'expense' : ''}`} value={low.endBalance} approx /><span className="faint" style={{ textTransform: 'capitalize' }}>fin {monthLabel(low.month)}</span></div>
         <div className="kpi"><span className="label">Dépenses du quotidien / mois</span>
           {editVar ? (
             <span className="input-group">
@@ -81,7 +81,7 @@ export default function Forecast() {
         <div className="callout warn"><AlertTriangle size={18} /><span>Le solde passerait <strong>sous zéro</strong> fin {monthLabel(low.month)} ({formatMoney(low.endBalance)}). Réduisez les dépenses ou décalez une dépense prévue.</span></div>
       )}
 
-      <Section title="Ce qu'il restera à la fin de chaque mois">
+      <Section title="Prévu à la fin de chaque mois, dépenses du quotidien comprises">
         <div className="card"><BalanceBars data={rows.map((r) => ({ month: r.month, value: r.endBalance }))} /></div>
       </Section>
 

@@ -194,3 +194,40 @@ export function forecast(inp: ForecastInput): ForecastMonth[] {
 function nextDay(d: ISODate): ISODate {
   return addInterval(d, 1, 'day')
 }
+
+/**
+ * « Il restera fin {mois} » (Q3) — la seule fonction qui calcule ce chiffre.
+ * = ce qu'il y a aujourd'hui sur les comptes + ce qui doit encore entrer − ce qui doit encore sortir
+ *   (abonnements, mensualités de crédit, prévisions), de demain au dernier jour du mois en cours.
+ * Les dépenses du quotidien estimées ne sont PAS déduites : c'est la différence avec
+ * « Au plus bas d'ici … » et « Fin {mois suivant}, prévu » (Les mois à venir, En bref), qui les comprennent.
+ */
+export interface EndOfMonth {
+  /** Sur les comptes aujourd'hui (XPF). */
+  today: number
+  /** Encore à payer d'ici la fin du mois (positif). */
+  toPay: number
+  /** Encore à recevoir d'ici la fin du mois. */
+  toReceive: number
+  /** Il restera fin du mois. */
+  remaining: number
+}
+export function endOfMonth(todayBalance: number, currentMonth: Pick<ForecastMonth, 'income' | 'subscriptions' | 'loans' | 'planned'>): EndOfMonth {
+  const toPay = currentMonth.subscriptions + currentMonth.loans + currentMonth.planned
+  const toReceive = currentMonth.income
+  return { today: todayBalance, toPay, toReceive, remaining: todayBalance - toPay + toReceive }
+}
+
+/**
+ * « soit environ N F par jour jusqu'au {dernier jour} » : reste ÷ jours restants (aujourd'hui compris),
+ * arrondi à la centaine inférieure. Rien si le reste est ≤ 0 ou s'il reste moins de 2 jours.
+ */
+export function perDay(remaining: number, today: ISODate): { amount: number; days: number; lastDay: ISODate } | undefined {
+  const [y, m, d] = split(today)
+  const last = daysInMonth(y, m)
+  const days = last - d + 1
+  if (!(remaining > 0) || days < 2) return undefined
+  const amount = Math.floor(remaining / days / 100) * 100
+  if (amount <= 0) return undefined
+  return { amount, days, lastDay: `${y}-${String(m).padStart(2, '0')}-${String(last).padStart(2, '0')}` }
+}

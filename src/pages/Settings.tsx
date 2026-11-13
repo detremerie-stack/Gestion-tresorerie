@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { biometricAvailable, checkPin, disableBiometric, disableLock, enableBiometric, hasBiometric, isLockEnabled, setPin } from '../lib/lock'
 import { PinPad } from '../ui/LockScreen'
-import { Download, RefreshCw, Upload } from 'lucide-react'
+import { ChevronRight, Download, FileText, RefreshCw, Smartphone, Tags, Upload, Wand2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useStore } from '../data/store'
 import { useMembers } from '../data/hooks'
 import { mergeBackup, parseBackup } from '../lib/backup'
@@ -179,6 +180,21 @@ export default function Settings() {
             <button className="btn" onClick={() => fileRef.current?.click()}><Upload size={18} />Restaurer</button>
             <input ref={fileRef} type="file" accept="application/json,.json" className="sr-only" onChange={(e) => e.target.files?.[0] && importJSON(e.target.files[0])} />
           </div>
+        </div>
+      </Section>
+
+      <Section title="Outils">
+        <div className="card flush">
+          <ul className="list">
+            {[
+              { to: '/releve', icon: FileText, label: 'Imprimer un relevé' },
+              { to: '/parametres/categories', icon: Tags, label: 'Catégories' },
+              { to: '/parametres/regles', icon: Wand2, label: 'Classement automatique' },
+              { to: '/parametres/wallet', icon: Smartphone, label: 'Paiements Google Wallet' },
+            ].map(({ to, icon: I, label }) => (
+              <li key={to}><Link to={to} className="row" style={{ color: 'inherit' }}><I size={20} aria-hidden="true" /><span className="main"><span className="title">{label}</span></span><ChevronRight size={18} className="faint" /></Link></li>
+            ))}
+          </ul>
         </div>
       </Section>
     </Page>

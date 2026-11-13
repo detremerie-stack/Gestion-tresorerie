@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { HashRouter, NavLink, Route, Routes, useLocation, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeftRight, Home, List, MoreHorizontal, Plane, Plus, Repeat, TrendingDown, TrendingUp, X } from 'lucide-react'
+import { HashRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { useStore } from './data/store'
 import { initSync } from './data/sync'
 import { Toaster } from './ui/toast'
 import { LockGate } from './ui/LockScreen'
+import { Shell } from './ui/Shell'
 import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
@@ -40,59 +40,6 @@ function useTheme() {
     if (theme === 'system') document.documentElement.removeAttribute('data-theme')
     else document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
-}
-
-function QuickAdd({ onClose }: { onClose: () => void }) {
-  const items = [
-    { to: '/rapide', icon: <TrendingDown size={22} className="expense" />, label: 'Dépense rapide' },
-    { to: '/operations/nouvelle?type=income', icon: <TrendingUp size={22} className="income" />, label: 'Revenu' },
-    { to: '/operations/nouvelle?type=transfer', icon: <ArrowLeftRight size={22} />, label: 'Virement' },
-    { to: '/abonnements/nouveau', icon: <Repeat size={22} />, label: 'Abonnement' },
-    { to: '/operations/nouvelle?type=expense', icon: <TrendingDown size={22} />, label: 'Dépense détaillée' },
-    { to: '/voyages/nouveau', icon: <Plane size={22} />, label: 'Voyage' },
-  ]
-  return (
-    <div className="backdrop" onClick={onClose}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label="Ajouter" onClick={(e) => e.stopPropagation()}>
-        <div className="split">
-          <h2>Ajouter</h2>
-          <button className="icon-btn" aria-label="Fermer" onClick={onClose}><X /></button>
-        </div>
-        <div className="quick-grid">
-          {items.map((i) => (
-            <Link key={i.to} to={i.to} onClick={onClose}>{i.icon}{i.label}</Link>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Nav() {
-  const [open, setOpen] = useState(false)
-  const loc = useLocation()
-  const navigate = useNavigate()
-  const simple = useStore((s) => s.settings.mode !== 'complet')
-  useEffect(() => {
-    setOpen(false)
-  }, [loc.pathname])
-  if (loc.pathname === '/rapide') return null
-  return (
-    <>
-      <nav className="nav no-print" aria-label="Navigation principale">
-        <ul>
-          <li><NavLink to="/" end><Home size={22} />Accueil</NavLink></li>
-          <li><NavLink to="/operations"><List size={22} />Historique</NavLink></li>
-          <li className="fab-slot">
-            <button className="fab" aria-label="Ajouter une dépense" onClick={() => (simple ? navigate('/rapide') : setOpen(true))}><Plus size={28} /></button>
-          </li>
-          <li><NavLink to="/abonnements"><Repeat size={22} />Abonnements</NavLink></li>
-          <li><NavLink to="/plus"><MoreHorizontal size={22} />Menu</NavLink></li>
-        </ul>
-      </nav>
-      {open && <QuickAdd onClose={() => setOpen(false)} />}
-    </>
-  )
 }
 
 function ScrollTop() {
@@ -167,7 +114,7 @@ export default function App() {
               <Route path="/parametres/synchro" element={<SyncPage />} />
               <Route path="*" element={<Dashboard />} />
             </Routes>
-            <Nav />
+            <Shell />
           </>
         )}
         <Toaster />

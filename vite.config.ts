@@ -20,7 +20,6 @@ export default defineConfig({
         start_url: './',
         scope: './',
         display: 'standalone',
-        orientation: 'portrait',
         background_color: '#f4f6f7',
         theme_color: '#0e7490',
         shortcuts: [

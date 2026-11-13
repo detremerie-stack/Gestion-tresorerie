@@ -93,6 +93,31 @@ export async function onUser(cb: (u: User | null) => void): Promise<() => void> 
   return f.authMod.onAuthStateChanged(f.auth, cb)
 }
 
+const REDIRECT_KEY = 'fare-moni-retour-google'
+function session(): Storage | undefined {
+  try {
+    return typeof sessionStorage === 'undefined' ? undefined : sessionStorage
+  } catch {
+    return undefined
+  }
+}
+/** Une connexion Google par redirection est-elle en cours (retour attendu) ? */
+export const redirectPending = () => session()?.getItem(REDIRECT_KEY) === '1'
+
+/** Termine une connexion Google par redirection : charge Firebase et lit le résultat. */
+export async function completeRedirect(): Promise<User | null> {
+  session()?.removeItem(REDIRECT_KEY)
+  const f = await getFb()
+  if (!f) return null
+  try {
+    const r = await f.authMod.getRedirectResult(f.auth)
+    return r?.user ?? f.auth.currentUser
+  } catch (e) {
+    setStatus({ state: 'error', message: e instanceof Error ? e.message : String(e) })
+    return null
+  }
+}
+
 export async function signInGoogle() {
   const f = await getFb()
   if (!f) throw new Error('Synchronisation non configurée')
@@ -101,8 +126,12 @@ export async function signInGoogle() {
     await f.authMod.signInWithPopup(f.auth, provider)
   } catch (e) {
     // Application installée : certains téléphones bloquent la fenêtre, on passe par une redirection.
-    if (String(e).includes('popup')) await f.authMod.signInWithRedirect(f.auth, provider)
-    else throw e
+    if (String(e).includes('popup')) {
+      // Au retour de Google, l'appli redémarre : cet indicateur lui dit de charger Firebase
+      // pour terminer la connexion, même si aucun foyer n'est encore lié.
+      session()?.setItem(REDIRECT_KEY, '1')
+      await f.authMod.signInWithRedirect(f.auth, provider)
+    } else throw e
   }
 }
 export async function signInEmail(email: string, password: string, create: boolean) {
@@ -314,7 +343,19 @@ export const hasHousehold = () => !!useStore.getState().sync.householdId
 export function initSync(): () => void {
   let cancelled = false
   const start = () => {
-    if (cancelled || !hasHousehold() || !isConfigured()) return
+    if (cancelled || !isConfigured()) return
+    if (!hasHousehold()) {
+      // Retour d'une connexion Google par redirection : seul cas où Firebase est chargé sans foyer.
+      if (redirectPending()) {
+        void (async () => {
+          const user = await completeRedirect()
+          if (!user || cancelled || !(await findHousehold())) return
+          startRealtime()
+          await syncNow()
+        })()
+      }
+      return
+    }
     void (async () => {
       const user = await currentUser()
       if (!user || cancelled) return
