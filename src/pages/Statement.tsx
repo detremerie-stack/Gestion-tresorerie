@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { csvCell } from '../lib/csvExport'
 import { Download, Printer } from 'lucide-react'
 import { useMap, useStore } from '../data/store'
 import { useAccounts, useMemberName, useTransactions } from '../data/hooks'
@@ -47,7 +48,7 @@ export default function Statement() {
 
   const exportCSV = () => {
     if (!data || !account) return
-    const esc = (s: string) => `"${s.replace(/"/g, '""')}"`
+    const esc = csvCell
     const lines = [
       ['Date', 'Libellé', 'Catégorie', 'Membre', 'Débit', 'Crédit', 'Solde'].join(';'),
       ...data.rows.map((r) => [formatDate(r.t.date), esc(r.label), esc(cats.get(r.t.categoryId ?? '')?.name ?? ''), esc(memberName(r.t.member) ?? ''),

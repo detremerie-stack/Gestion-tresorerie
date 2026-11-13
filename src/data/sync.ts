@@ -174,8 +174,12 @@ export function scheduleSync(delay = 800) {
 
 /** Envoie les modifications locales (par lots de 400). */
 export async function syncNow(): Promise<void> {
-  const f = await getFb()
   const hid = useStore.getState().sync.householdId
+  if (!hid) {
+    setStatus({ state: 'off' })
+    return
+  }
+  const f = await getFb()
   const user = f ? await currentUser() : null
   if (!f || !hid || !user) {
     setStatus({ state: 'off' })
@@ -233,9 +237,10 @@ export async function syncNow(): Promise<void> {
 /** Écoute en direct les changements du foyer (depuis la dernière réception). */
 export function startRealtime() {
   void (async () => {
-    const f = await getFb()
     const hid = useStore.getState().sync.householdId
-    if (!f || !hid || !(await currentUser())) return
+    if (!hid) return
+    const f = await getFb()
+    if (!f || !(await currentUser())) return
     unsub?.()
     const { collection, query, where, onSnapshot, Timestamp } = f.mod
     const since = useStore.getState().sync.lastPulledAt
@@ -269,44 +274,72 @@ export async function signOut() {
 
 /** Justificatifs : copie dans Firestore (fichiers compressés ≤ 900 Ko). */
 export async function uploadFile(id: string, blob: Blob, name: string): Promise<boolean> {
-  const f = await getFb()
   const hid = useStore.getState().sync.householdId
+  if (!hid) return false
+  const f = await getFb()
   if (!f || !hid || !(await currentUser()) || blob.size > 900_000) return false
   const { doc, setDoc, Bytes } = f.mod
-  await setDoc(doc(f.db, 'households', hid, 'files', id), { name, type: blob.type, data: Bytes.fromUint8Array(new Uint8Array(await blob.arrayBuffer())) })
+  const { safeType } = await import('../lib/attachments')
+  await setDoc(doc(f.db, 'households', hid, 'files', id), { name, type: safeType(blob.type), data: Bytes.fromUint8Array(new Uint8Array(await blob.arrayBuffer())) })
   return true
 }
 export async function downloadFile(id: string): Promise<Blob | null> {
-  const f = await getFb()
   const hid = useStore.getState().sync.householdId
+  if (!hid) return null
+  const f = await getFb()
   if (!f || !hid || !(await currentUser())) return null
   const { doc, getDoc } = f.mod
   const d = await getDoc(doc(f.db, 'households', hid, 'files', id))
   if (!d.exists()) return null
-  return new Blob([d.data().data.toUint8Array()], { type: d.data().type })
+  // Le type vient du document distant : liste blanche, sinon fichier opaque (P2).
+  const { safeType } = await import('../lib/attachments')
+  return new Blob([d.data().data.toUint8Array()], { type: safeType(d.data().type) })
 }
 export async function removeFile(id: string) {
-  const f = await getFb()
   const hid = useStore.getState().sync.householdId
+  if (!hid) return
+  const f = await getFb()
   if (!f || !hid) return
   const { doc, deleteDoc } = f.mod
   await deleteDoc(doc(f.db, 'households', hid, 'files', id)).catch(() => {})
 }
 
-export function initSync() {
-  void (async () => {
-    if (!isConfigured()) return
-    const user = await currentUser()
-    if (!user) return
-    if (!useStore.getState().sync.householdId) await findHousehold()
-    startRealtime()
-    await syncNow()
-  })()
-  useStore.subscribe((s, prev) => {
+/** Un foyer est-il lié à cet appareil ? Sans foyer, Firebase n'est jamais chargé au démarrage. */
+export const hasHousehold = () => !!useStore.getState().sync.householdId
+
+/**
+ * Démarre la synchronisation après le premier affichage, et seulement si un foyer est lié.
+ * Renvoie une fonction qui retire proprement tous les écouteurs.
+ */
+export function initSync(): () => void {
+  let cancelled = false
+  const start = () => {
+    if (cancelled || !hasHousehold() || !isConfigured()) return
+    void (async () => {
+      const user = await currentUser()
+      if (!user || cancelled) return
+      startRealtime()
+      await syncNow()
+    })()
+  }
+  // Après le premier affichage : le téléchargement de Firebase ne retarde jamais l'écran.
+  const ric = typeof window.requestIdleCallback === 'function'
+  const handle = ric ? window.requestIdleCallback(start, { timeout: 2000 }) : window.setTimeout(start, 200)
+  const unsubStore = useStore.subscribe((s, prev) => {
     if (s.dirty !== prev.dirty && Object.keys(s.dirty).length) scheduleSync()
   })
-  window.addEventListener('online', () => scheduleSync(100))
-  document.addEventListener('visibilitychange', () => {
+  const onOnline = () => scheduleSync(100)
+  const onVisible = () => {
     if (document.visibilityState === 'visible') scheduleSync(100)
-  })
+  }
+  window.addEventListener('online', onOnline)
+  document.addEventListener('visibilitychange', onVisible)
+  return () => {
+    cancelled = true
+    if (ric) window.cancelIdleCallback(handle)
+    else window.clearTimeout(handle)
+    unsubStore()
+    window.removeEventListener('online', onOnline)
+    document.removeEventListener('visibilitychange', onVisible)
+  }
 }

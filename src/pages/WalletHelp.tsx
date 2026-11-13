@@ -16,7 +16,7 @@ export default function WalletHelp() {
           <li>Installez <strong>MacroDroid</strong> depuis le Play Store et autorisez l'<strong>accès aux notifications</strong>.</li>
           <li>Nouvelle macro › Déclencheur : <strong>Notification reçue</strong> › application <strong>Google Wallet</strong> (ajoutez aussi l'app de votre banque si elle notifie les paiements).</li>
           <li>Action : <strong>Ouvrir un site web / URL</strong>, collez le lien ci-dessous. MacroDroid remplace <code>{'{not_title}'}</code> et <code>{'{not_text}'}</code> par le titre et le texte de la notification.</li>
-          <li>Dans <strong>Comptes</strong>, renseignez les 4 derniers chiffres de chaque carte (ex. 5778 pour la Visa Banque de Tahiti de Lionel) : Fare Moni choisira la bonne carte et la bonne personne.</li>
+          <li>Dans <strong>Comptes</strong>, renseignez les 4 derniers chiffres de chaque carte (par exemple 1234) : Fare Moni choisira la bonne carte et la bonne personne.</li>
         </ol>
       </Section>
       <Section title="Lien à coller dans MacroDroid">
@@ -28,7 +28,7 @@ export default function WalletHelp() {
       <Section title="Variante simple">
         <div className="card stack">
           <span className="muted">Si votre automatisation sait extraire le montant et le commerçant, utilisez :</span>
-          <code style={{ wordBreak: 'break-all', fontSize: 13 }}>{`${base}?montant=2890&marchand=LE FOURNIL&carte=5778`}</code>
+          <code style={{ wordBreak: 'break-all', fontSize: 13 }}>{`${base}?montant=2890&marchand=LE FOURNIL&carte=1234`}</code>
           <button className="btn" onClick={() => copy(`${base}?montant=&marchand=&carte=`)}><Copy size={18} />Copier le modèle</button>
         </div>
       </Section>

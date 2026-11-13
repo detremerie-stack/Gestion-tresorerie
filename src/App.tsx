@@ -115,7 +115,7 @@ export default function App() {
   useEffect(() => {
     if (!hydrated) return
     useStore.getState().upgradeDefaults()
-    initSync()
+    return initSync()
   }, [hydrated])
 
   if (!hydrated) return null

@@ -1,4 +1,4 @@
-import type { Account, Category, Member, Rule, Subscription } from './types'
+import type { Account, Category, Member, Rule } from './types'
 
 const now = () => new Date().toISOString()
 
@@ -107,26 +107,4 @@ export function defaultRules(): Rule[] {
       categoryId: cat.startsWith('c-') ? cat : `c-${cat}`,
     })),
   )
-}
-
-/**
- * Abonnements repris des captures de l'app actuelle (montants d'origine en euros,
- * que Paramapp convertissait avec un taux approximatif de 119,26).
- */
-export function paramappSubscriptions(): Subscription[] {
-  const s = (p: Partial<Subscription> & Pick<Subscription, 'id' | 'name' | 'amount' | 'currency' | 'startDate' | 'color'>): Seed<Subscription> => ({
-    every: 1, unit: 'month', status: 'active', tags: [], remindDays: 2, categoryId: 'c-abonnements', member: undefined, ...p,
-  })
-  return stamp<Subscription>([
-    s({ id: 's-disney', name: 'Disney+', plan: 'Standard avec pub', amount: 5.99, currency: 'EUR', startDate: '2026-11-08', color: '#0B5F59', tags: ['Streaming'] }),
-    s({ id: 's-navicat', name: 'PremiumSoft Navicat', plan: 'Navicat for MariaDB', amount: 7.99, currency: 'USD', startDate: '2026-11-08', color: '#A68D85', tags: ['Utilitaire'], notes: 'Montant saisi « 7,99 FCFP » dans Paramapp : devise à vérifier.' }),
-    s({ id: 's-google-one', name: 'Google One', plan: '2 To', amount: 9.99, currency: 'EUR', startDate: '2026-11-15', color: '#03A9F4', tags: ['Stockage'] }),
-    s({ id: 's-youtube', name: 'YouTube Premium', amount: 12.99, currency: 'EUR', startDate: '2026-11-20', color: '#E91E63', tags: ['Streaming'] }),
-    s({ id: 's-spotify', name: 'Spotify', plan: 'Premium personnel', amount: 9.99, currency: 'EUR', startDate: '2026-11-26', color: '#388E3C', tags: ['Streaming'] }),
-    s({ id: 's-vini', name: 'Vini', plan: 'Abonnement GSM', amount: 3900, currency: 'XPF', startDate: '2026-12-01', color: '#F44336', tags: ['Télécom'], categoryId: 'c-telecom' }),
-    s({ id: 's-viti-ora', name: 'Viti Ora', plan: 'Abonnement Internet', amount: 9990, currency: 'XPF', startDate: '2026-12-01', color: '#4CAF50', tags: ['Télécom'], categoryId: 'c-telecom' }),
-    s({ id: 's-netflix', name: 'Netflix', plan: 'Offre Premium', amount: 13.99, currency: 'EUR', startDate: '2026-12-04', color: '#E50914', tags: ['Streaming'] }),
-    s({ id: 's-dashlane', name: 'Dashlane', plan: 'Premium', amount: 39.99, currency: 'EUR', unit: 'year', startDate: '2027-04-08', color: '#009688', tags: ['Utilitaire'] }),
-    s({ id: 's-playstation', name: 'PlayStation Plus', plan: 'Essential', amount: 71.99, currency: 'EUR', unit: 'year', startDate: '2027-11-01', color: '#F44336', tags: ['Jeux'], notes: 'Date de renouvellement approximative : à vérifier.' }),
-  ])
 }

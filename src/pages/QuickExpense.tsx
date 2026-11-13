@@ -12,14 +12,14 @@ import { parseReceipt } from '../lib/receipt'
 import type { AttachmentMeta } from '../data/types'
 import { AttachmentThumb } from '../ui/Attachments'
 import { CategoryEditor } from '../ui/CategoryEditor'
-import { parsePaymentText } from '../lib/quick'
+import { isValidAmount, knownCurrency, quickParams } from '../lib/quick'
 import { cleanLabel, matchRule } from '../lib/rules'
 import { CatIcon } from '../ui/Icon'
 import { useToast } from '../ui/toast'
 
 /**
  * Saisie express d'une dépense. Accepte des paramètres d'URL (automatisation Wallet) :
- * #/rapide?montant=2890&marchand=LE%20FOURNIL&devise=XPF&carte=5778  ou  #/rapide?titre=…&texte=…
+ * #/rapide?montant=2890&marchand=LE%20FOURNIL&devise=XPF&carte=1234  ou  #/rapide?titre=…&texte=…
  */
 export default function QuickExpense() {
   const [params] = useSearchParams()
@@ -40,16 +40,8 @@ export default function QuickExpense() {
   const txs = useList('transactions')
 
   // Pré-remplissage depuis une notification de paiement
-  const fromUrl = useMemo(() => {
-    const parsed = params.get('texte') || params.get('titre') ? parsePaymentText(params.get('titre') ?? '', params.get('texte') ?? '') : {}
-    const amount = params.get('montant') ? parseAmount(params.get('montant')!) : parsed.amount
-    return {
-      amount: amount && !Number.isNaN(amount) ? amount : undefined,
-      currency: ((params.get('devise') as Currency) || parsed.currency) ?? undefined,
-      merchant: params.get('marchand') ?? parsed.merchant,
-      last4: params.get('carte') ?? parsed.last4,
-    }
-  }, [params])
+  // Paramètres validés : montant hors bornes ou devise inconnue ignorés (lien piégé, P3).
+  const fromUrl = useMemo(() => quickParams((k) => params.get(k)), [params])
 
   const t0 = today()
   const trip = trips.find((x) => x.startDate <= t0 && t0 <= x.endDate)
@@ -123,8 +115,11 @@ export default function QuickExpense() {
   const press = (k: string) => {
     if (k === '⌫') return setDigits((d) => d.slice(0, -1))
     if (k === ',' && (currency === 'XPF' || digits.includes(','))) return
-    if (digits.replace(/\D/g, '').length >= 9) return
-    setDigits((d) => (d === '0' && k !== ',' ? k : d + k))
+    setDigits((d) => {
+      const next = d === '0' && k !== ',' ? k : d + k
+      // Au plus 9 chiffres avant la virgule, touche « 000 » comprise.
+      return next.split(',')[0].replace(/\D/g, '').length > 9 ? d : next
+    })
   }
   const pickFrequent = (f: (typeof frequent)[number]) => {
     setPayee(f.payee)
@@ -138,10 +133,12 @@ export default function QuickExpense() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = () => {
-    if (!(value > 0) || !account) return
+    // Refus de tout montant non fini, nul, négatif ou de plus de 9 chiffres, et de toute devise inconnue.
+    if (!isValidAmount(value) || !knownCurrency(currency) || !account) return
     const foreign = currency !== account.currency
     const fee = effectiveFee(currency, account.currency, account.fxFeePct)
     const amount = foreign ? fromXPF(toXPF(value, currency, rates) * (1 + fee / 100), account.currency, rates) : value
+    if (!Number.isFinite(amount) || !(amount > 0)) return
     const tx = upsert('transactions', {
       date, type: 'expense', amount, accountId, categoryId: categoryId ?? (payee ? guess(payee) : undefined), payee: payee.trim() || undefined,
       tags: [], member, ...(foreign ? { originalAmount: value, originalCurrency: currency, rateUsed: rateOf(currency, rates) } : {}),
@@ -229,8 +226,8 @@ export default function QuickExpense() {
         ))}
       </div>
       <Link to="/operations/nouvelle?type=income" replace className="faint" style={{ textAlign: 'center' }}>Autre chose ? Revenu, virement, dépense détaillée</Link>
-      <button className="btn primary block quick-save" disabled={!(value > 0) || !account} onClick={save}>
-        Enregistrer {value > 0 ? formatMoney(value, currency) : ''}
+      <button className="btn primary block quick-save" disabled={!isValidAmount(value) || !account} onClick={save}>
+        Enregistrer {isValidAmount(value) ? formatMoney(value, currency) : ''}
       </button>
     </main>
   )

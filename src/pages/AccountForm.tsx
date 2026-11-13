@@ -104,7 +104,7 @@ export default function AccountForm() {
             }
             return (
               <div key={i} className="input-group">
-                <input className="input" inputMode="numeric" maxLength={4} placeholder="ex. 5778" value={digits ?? ''} aria-label="4 derniers chiffres" onChange={(e) => set(e.target.value.replace(/\D/g, ''), who)} style={{ maxWidth: 120 }} />
+                <input className="input" inputMode="numeric" maxLength={4} placeholder="ex. 1234" value={digits ?? ''} aria-label="4 derniers chiffres" onChange={(e) => set(e.target.value.replace(/\D/g, ''), who)} style={{ maxWidth: 120 }} />
                 <select className="input" value={who ?? ''} aria-label="Titulaire de la carte" onChange={(e) => set(digits ?? '', e.target.value || undefined)} style={{ flex: 1, width: '100%' }}>
                   <option value="">Titulaire…</option>
                   {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}

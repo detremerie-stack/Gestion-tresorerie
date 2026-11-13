@@ -1,4 +1,4 @@
-import { parseAmount, type Currency } from './money'
+import { CURRENCIES, parseAmount, type Currency } from './money'
 
 export interface ParsedPayment {
   amount?: number
@@ -33,4 +33,39 @@ export function parsePaymentText(title: string, text: string): ParsedPayment {
   const merchant = (chez?.[1] ?? title ?? '').trim()
   if (merchant && !/^(google wallet|wallet|paiement|payment)$/i.test(merchant)) out.merchant = merchant
   return out
+}
+
+/** Montant maximal accepté : 9 chiffres avant la virgule (comme le pavé de saisie). */
+export const MAX_AMOUNT = 999_999_999
+
+/** Montant enregistrable : nombre fini, strictement positif, au plus 9 chiffres avant la virgule. */
+export function isValidAmount(n: unknown): n is number {
+  return typeof n === 'number' && Number.isFinite(n) && n > 0 && n <= MAX_AMOUNT
+}
+
+/** Devise connue de l'application (liste `CURRENCIES`), sinon `undefined`. */
+export function knownCurrency(code: string | null | undefined): Currency | undefined {
+  if (!code) return undefined
+  const c = code.trim().toUpperCase()
+  return CURRENCIES.some((x) => x.code === c) ? (c as Currency) : undefined
+}
+
+/**
+ * Paramètres de `#/rapide?montant=…&devise=…&marchand=…&carte=…` (ou `titre`/`texte` d'une notification),
+ * validés : montant hors bornes ou devise inconnue → ignorés (champ laissé vide).
+ */
+export function quickParams(get: (name: string) => string | null): ParsedPayment {
+  const titre = get('titre')
+  const texte = get('texte')
+  const parsed = texte || titre ? parsePaymentText(titre ?? '', texte ?? '') : {}
+  const montant = get('montant')
+  const amount = montant ? parseAmount(montant) : parsed.amount
+  const devise = get('devise')
+  const carte = get('carte') ?? parsed.last4
+  return {
+    amount: isValidAmount(amount) ? amount : undefined,
+    currency: devise ? knownCurrency(devise) : parsed.currency,
+    merchant: get('marchand') ?? parsed.merchant,
+    last4: carte && /^\d{1,4}$/.test(carte) ? carte : undefined,
+  }
 }

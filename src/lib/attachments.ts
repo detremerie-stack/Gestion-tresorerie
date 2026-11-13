@@ -2,6 +2,21 @@ import { createStore, del, get, keys, set } from 'idb-keyval'
 import type { AttachmentMeta } from '../data/types'
 import { uid } from './id'
 
+/** Types de justificatifs affichables. Tout autre type (HTML, SVG, script…) est traité comme un fichier opaque. */
+export const SAFE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'] as const
+
+/** Type MIME sûr : seulement la liste blanche, sinon `application/octet-stream` (jamais exécuté par le navigateur). */
+export function safeType(type: string | undefined | null): string {
+  const t = String(type ?? '').split(';')[0].trim().toLowerCase()
+  return (SAFE_TYPES as readonly string[]).includes(t) ? t : 'application/octet-stream'
+}
+
+/** Copie du fichier avec un type sûr (un justificatif reçu d'ailleurs ne doit pas s'ouvrir comme une page web). */
+export function withSafeType(blob: Blob): Blob {
+  const t = safeType(blob.type)
+  return t === blob.type ? blob : new Blob([blob], { type: t })
+}
+
 // Fichiers sur l'appareil (IndexedDB) ; copiés dans Firestore (foyer) quand la synchro est active.
 const store = createStore('fare-moni-docs', 'files')
 const pending = createStore('fare-moni-docs-pending', 'uploads')
@@ -31,8 +46,9 @@ async function compress(file: File): Promise<Blob> {
 
 export async function saveAttachment(file: File): Promise<AttachmentMeta> {
   const blob = await compress(file)
-  const meta: AttachmentMeta = { id: uid(), name: file.name || 'ticket.jpg', type: blob.type || file.type, size: blob.size, createdAt: new Date().toISOString() }
-  await set(meta.id, blob, store)
+  const safe = withSafeType(blob.type ? blob : new Blob([blob], { type: file.type }))
+  const meta: AttachmentMeta = { id: uid(), name: file.name || 'ticket.jpg', type: safe.type, size: safe.size, createdAt: new Date().toISOString() }
+  await set(meta.id, safe, store)
   await set(meta.id, true, pending)
   void flushUploads().catch(() => {})
   return meta
@@ -46,7 +62,7 @@ export async function attachmentUrl(id: string): Promise<string | undefined> {
     const dl = await downloadFile(id).catch(() => null)
     if (dl) { blob = dl; await set(id, blob, store) }
   }
-  return blob ? URL.createObjectURL(blob) : undefined
+  return blob ? URL.createObjectURL(withSafeType(blob)) : undefined
 }
 
 export async function deleteAttachment(id: string) {

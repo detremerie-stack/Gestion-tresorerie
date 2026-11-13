@@ -4,7 +4,7 @@ import { PinPad } from '../ui/LockScreen'
 import { Download, RefreshCw, Upload } from 'lucide-react'
 import { useStore } from '../data/store'
 import { useMembers } from '../data/hooks'
-import { KINDS, type Kind } from '../data/types'
+import { mergeBackup, parseBackup } from '../lib/backup'
 import { CURRENCIES, EUR_XPF, parseAmount, type Currency } from '../lib/money'
 import { fetchRates } from '../lib/rates'
 import { formatDate, today } from '../lib/dates'
@@ -98,13 +98,9 @@ export default function Settings() {
 
   const importJSON = async (file: File) => {
     try {
-      const json = JSON.parse(await file.text())
-      if (json.app !== 'moni' || !json.data) throw new Error('Ce fichier n’est pas une sauvegarde Moni.')
-      const counts = KINDS.map((k: Kind) => Object.keys(json.data[k] ?? {}).length)
-      if (!confirm(`Restaurer ${counts.reduce((a, b) => a + b, 0)} éléments ? Les éléments de même identifiant seront remplacés.`)) return
-      const s = useStore.getState()
-      const merged = Object.fromEntries(KINDS.map((k) => [k, { ...s.data[k], ...(json.data[k] ?? {}) }]))
-      replaceAll(merged)
+      const backup = parseBackup(JSON.parse(await file.text()))
+      if (!confirm(`Restaurer ${backup.total} éléments ?${backup.ignored ? ` (${backup.ignored} élément(s) illisible(s) seront ignorés.)` : ''} Les éléments de même identifiant seront remplacés.`)) return
+      replaceAll(mergeBackup(useStore.getState().data, backup.data))
       toast('Sauvegarde restaurée')
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Fichier illisible')

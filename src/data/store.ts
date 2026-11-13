@@ -4,7 +4,8 @@ import { del, get, set } from 'idb-keyval'
 import { useMemo } from 'react'
 import type { Collections, Kind, Loan, Settings, Subscription, Transaction } from './types'
 import { KINDS } from './types'
-import { LOAN_CATEGORY, defaultAccounts, defaultCategories, defaultMembers, defaultRules, paramappSubscriptions } from './defaults'
+import { isValidRecord } from './validate'
+import { LOAN_CATEGORY, defaultAccounts, defaultCategories, defaultMembers, defaultRules } from './defaults'
 import type { Installment } from '../lib/loans'
 import { uid } from '../lib/id'
 import { DEFAULT_RATES, effectiveFee, formatMoney, fromXPF, toXPF } from '../lib/money'
@@ -36,7 +37,8 @@ export interface State {
   clearDirty: (keys: string[]) => void
   setSettings: (p: Partial<Settings>) => void
   setSync: (p: Partial<SyncConfig>) => void
-  completeOnboarding: (opts: { member: string; importParamapp: boolean }) => void
+  /** `importParamapp` : ignoré (liste d'abonnements par défaut retirée), gardé pour compatibilité. */
+  completeOnboarding: (opts: { member: string; importParamapp?: boolean }) => void
   markSubscriptionPaid: (sub: Subscription, date: string, amountInAccount?: number) => Transaction
   markLoanPaid: (loan: Loan, inst: Installment) => Transaction
   ensureLoanCategory: () => string
@@ -48,6 +50,23 @@ export interface State {
 const emptyMaps = (): Maps => Object.fromEntries(KINDS.map((k) => [k, {}])) as unknown as Maps
 
 const toMap = <T extends { id: string }>(xs: T[]) => Object.fromEntries(xs.map((x) => [x.id, x]))
+
+/** Version du format enregistré (`moni-store`). Ne pas changer sans migration testée. */
+export const STORE_VERSION = 1
+
+/** État enregistré tel que lu sur l'appareil (forme partielle, non vérifiée). */
+export type PersistedState = Partial<Pick<State, 'data' | 'settings' | 'dirty' | 'sync' | 'onboarded'>>
+
+/** Migration des anciennes versions de l'état enregistré : identité (aucune donnée transformée ni perdue). */
+export function migratePersisted(persisted: unknown, _fromVersion: number): State {
+  return (persisted ?? {}) as State
+}
+
+/** Fusion de l'état enregistré avec l'état initial : toutes les collections existent, réglages complétés. */
+export function mergePersisted(persisted: unknown, current: State): State {
+  const p = (persisted ?? {}) as PersistedState
+  return { ...current, ...p, data: { ...emptyMaps(), ...(p.data ?? {}) }, settings: { ...current.settings, ...(p.settings ?? {}) } }
+}
 
 const idbStorage: StateStorage = {
   getItem: async (name) => (await get(name)) ?? null,
@@ -107,7 +126,8 @@ export const useStore = create<State>()(
           const data = { ...s.data }
           const touched = new Set<Kind>()
           for (const { kind, data: rec } of rows) {
-            if (!KINDS.includes(kind)) continue
+            // Forme minimale vérifiée : un enregistrement distant mal formé est ignoré (P10).
+            if (!isValidRecord(kind, rec)) continue
             // Une modification locale non encore envoyée l'emporte (elle sera poussée ensuite).
             if (s.dirty[`${kind}:${rec.id}`]) continue
             if (!touched.has(kind)) {
@@ -130,16 +150,13 @@ export const useStore = create<State>()(
       setSettings: (p) => setState((s) => ({ settings: { ...s.settings, ...p } })),
       setSync: (p) => setState((s) => ({ sync: { ...s.sync, ...p } })),
 
-      completeOnboarding: ({ member, importParamapp }) => {
+      completeOnboarding: ({ member }) => {
         const s = getState()
         const isEmpty = (k: Kind) => Object.keys(s.data[k]).length === 0
         if (isEmpty('members')) s.upsertMany('members', defaultMembers())
         if (isEmpty('accounts')) s.upsertMany('accounts', defaultAccounts())
         if (isEmpty('categories')) s.upsertMany('categories', defaultCategories())
         if (isEmpty('rules')) s.upsertMany('rules', defaultRules())
-        if (importParamapp && isEmpty('subscriptions')) {
-          s.upsertMany('subscriptions', paramappSubscriptions().map((x) => ({ ...x, accountId: x.currency === 'XPF' ? 'a-bt' : 'a-amex' })))
-        }
         setState((st) => ({ onboarded: true, settings: { ...st.settings, currentMember: member } }))
       },
 
@@ -225,13 +242,13 @@ export const useStore = create<State>()(
     }),
     {
       name: 'moni-store',
-      version: 1,
+      version: STORE_VERSION,
       storage: createJSONStorage(() => idbStorage),
       partialize: (s) => ({ data: s.data, settings: s.settings, dirty: s.dirty, sync: s.sync, onboarded: s.onboarded }),
-      merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<State>
-        return { ...current, ...p, data: { ...emptyMaps(), ...(p.data ?? {}) }, settings: { ...current.settings, ...(p.settings ?? {}) } }
-      },
+      // Migration identité : si `version` augmente un jour sans `migrate`, zustand ignorerait
+      // l'état enregistré et la première écriture effacerait les données de l'appareil.
+      migrate: migratePersisted,
+      merge: mergePersisted,
     },
   ),
 )
