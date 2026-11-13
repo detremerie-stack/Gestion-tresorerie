@@ -146,93 +146,89 @@ function inviteCode(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => chars[b % chars.length]).join('')
 }
 
-/** Crée le foyer ou le rejoint avec un code d'invitation, puis envoie les données locales. */
-export async function linkHousehold(mode: 'create' | 'join', value: string) {
+/** Crée le foyer, puis envoie les données locales. (Rejoindre : `startJoin` puis `confirmJoin`, après confirmation.) */
+export async function linkHousehold(value: string) {
   const f = await getFb()
   const user = await currentUser()
   if (!f || !user) throw new Error('Connectez-vous d’abord.')
-  const { doc, collection, setDoc, getDoc, updateDoc, arrayUnion, serverTimestamp, getDocs } = f.mod
-  let hid: string
-  let name: string
-  let code: string
-  if (mode === 'create') {
-    const ref = doc(collection(f.db, 'households'))
-    code = inviteCode()
-    name = value || 'Foyer'
-    await setDoc(ref, { name, inviteCode: code, members: [user.uid], createdAt: serverTimestamp() })
-    await setDoc(doc(f.db, 'invites', code), { householdId: ref.id })
-    hid = ref.id
-  } else {
-    code = value.trim().toUpperCase()
-    const inv = await getDoc(doc(f.db, 'invites', code))
-    if (!inv.exists()) throw new Error('Code d’invitation inconnu.')
-    hid = inv.data().householdId as string
-    await updateDoc(doc(f.db, 'households', hid), { members: arrayUnion(user.uid), lastJoinCode: code })
-    name = ((await getDoc(doc(f.db, 'households', hid))).data()?.name as string) ?? 'Foyer'
-  }
+  const { doc, collection, setDoc, serverTimestamp } = f.mod
+  const ref = doc(collection(f.db, 'households'))
+  const code = inviteCode()
+  const name = value || 'Foyer'
+  await setDoc(ref, { name, inviteCode: code, members: [user.uid], createdAt: serverTimestamp() })
+  await setDoc(doc(f.db, 'invites', code), inviteDoc(ref.id, name, user))
   const st = useStore.getState()
-  st.setSync({ householdId: hid, householdName: name, inviteCode: code, lastPulledAt: undefined })
+  st.setSync({ householdId: ref.id, householdName: name, inviteCode: code, lastPulledAt: undefined })
   const dirty: Record<string, true> = {}
   for (const k of KINDS) for (const id of Object.keys(st.data[k])) dirty[`${k}:${id}`] = true
-  if (mode === 'join') {
-    // En rejoignant, les données du foyer font foi : on n'écrase pas celles de l'autre membre.
-    const snap = await getDocs(collection(f.db, 'households', hid, 'records'))
-    snap.forEach((d) => delete dirty[`${d.data().kind}:${d.data().id}`])
-  }
   useStore.setState({ dirty })
   startRealtime()
   await syncNow()
 }
 
-/** Foyer rejoint mais pas encore confirmé : aucune donnée de l'appareil n'a été envoyée (P4). */
-export interface PendingJoin { hid: string; name: string; members: number; code: string }
+/** Prénom et e-mail partiel d'un membre (« Lionel · li…@gmail.com »), affichés à qui veut rejoindre. */
+export function memberLabel(u: { displayName?: string | null; email?: string | null }): string {
+  const first = (u.displayName ?? '').trim().split(/\s+/)[0]
+  const [local, domain] = (u.email ?? '').split('@')
+  const mail = local && domain ? `${local.slice(0, 2)}…@${domain}` : ''
+  return [first, mail].filter(Boolean).join(' · ') || 'Membre'
+}
 
 /**
- * Rejoindre, étape 1 : s'ajouter au foyer avec le code, puis lire son nom.
- * Rien n'est envoyé tant que `confirmJoin` n'est pas appelé ; `cancelJoin` retire la personne du foyer.
+ * Document d'invitation : le foyer, son nom et qui y est déjà (champs ajoutés, ignorés par l'ancienne appli).
+ * Ils permettent de montrer à qui veut rejoindre où il entre, sans rien écrire avant sa confirmation (P4).
  */
+function inviteDoc(householdId: string, name: string, user: { displayName?: string | null; email?: string | null }) {
+  return { householdId, name, members: [memberLabel(user)] }
+}
+
+/** Ce qu'on sait d'un foyer avant de le rejoindre : rien n'a encore été écrit (P4). */
+export interface PendingJoin {
+  hid: string
+  code: string
+  /** Nom choisi par le créateur (libre), absent pour un code créé par l'ancienne version. */
+  name?: string
+  /** Prénoms / e-mails partiels des membres présents à la création du code. */
+  members: string[]
+}
+
+/** Rejoindre, étape 1 : lecture seule du code d'invitation. Aucune écriture, aucun lien local. */
 export async function startJoin(value: string): Promise<PendingJoin> {
   const f = await getFb()
   const user = await currentUser()
   if (!f || !user) throw new Error('Connectez-vous d’abord.')
-  const { doc, getDoc, updateDoc, arrayUnion } = f.mod
+  const { doc, getDoc } = f.mod
   const code = value.trim().toUpperCase()
   const inv = await getDoc(doc(f.db, 'invites', code))
   if (!inv.exists()) throw new Error('Code d’invitation inconnu.')
-  const hid = inv.data().householdId as string
+  const d = inv.data()
+  const members = Array.isArray(d.members) ? (d.members as unknown[]).filter((x): x is string => typeof x === 'string').slice(0, 4) : []
+  return { hid: d.householdId as string, code, name: typeof d.name === 'string' ? d.name : undefined, members }
+}
+
+/** Rejoindre, étape 2, seulement après « Rejoindre » : ajout au foyer, lien local, puis envoi des ajouts locaux. */
+export async function confirmJoin(p: PendingJoin) {
+  const f = await getFb()
+  const user = await currentUser()
+  if (!f || !user) throw new Error('Connectez-vous d’abord.')
+  const { doc, getDoc, updateDoc, arrayUnion, collection, getDocs } = f.mod
   try {
-    await updateDoc(doc(f.db, 'households', hid), { members: arrayUnion(user.uid), lastJoinCode: code })
+    await updateDoc(doc(f.db, 'households', p.hid), { members: arrayUnion(user.uid), lastJoinCode: p.code })
   } catch (e) {
     if (String(e).includes('permission')) throw new Error('Impossible de rejoindre : le foyer est complet (2 personnes) ou ce code a été changé.')
     throw e
   }
-  const h = (await getDoc(doc(f.db, 'households', hid))).data()
-  return { hid, name: (h?.name as string) ?? 'Foyer', members: (h?.members as string[] | undefined)?.length ?? 0, code }
-}
-
-/** Rejoindre, étape 2 (après « Rejoindre le foyer “…” ? ») : les données du foyer font foi, puis envoi des ajouts locaux. */
-export async function confirmJoin(p: PendingJoin) {
-  const f = await getFb()
-  if (!f) return
+  const name = ((await getDoc(doc(f.db, 'households', p.hid))).data()?.name as string | undefined) ?? p.name ?? 'Foyer'
   const st = useStore.getState()
-  st.setSync({ householdId: p.hid, householdName: p.name, inviteCode: p.code, lastPulledAt: undefined })
+  st.setSync({ householdId: p.hid, householdName: name, inviteCode: p.code, lastPulledAt: undefined })
   const dirty: Record<string, true> = {}
   for (const k of KINDS) for (const id of Object.keys(st.data[k])) dirty[`${k}:${id}`] = true
-  const { collection, getDocs } = f.mod
+  // Les données du foyer font foi : on n'écrase pas celles de l'autre membre.
   const snap = await getDocs(collection(f.db, 'households', p.hid, 'records'))
   snap.forEach((d) => delete dirty[`${d.data().kind}:${d.data().id}`])
   useStore.setState({ dirty })
   startRealtime()
   await syncNow()
-}
-
-/** Rejoindre annulé : on se retire du foyer ; aucune donnée n'est partie. */
-export async function cancelJoin(p: PendingJoin) {
-  const f = await getFb()
-  const user = await currentUser()
-  if (!f || !user) return
-  const { doc, updateDoc, arrayRemove } = f.mod
-  await updateDoc(doc(f.db, 'households', p.hid), { members: arrayRemove(user.uid) }).catch(() => {})
 }
 
 /** Qui a accès au foyer : nombre de comptes Google membres. */
@@ -262,7 +258,8 @@ export async function changeInviteCode(): Promise<string> {
   if (!f || !hid || !(await currentUser())) throw new Error('Partage non connecté.')
   const { doc, setDoc, updateDoc, deleteDoc } = f.mod
   const code = inviteCode()
-  await setDoc(doc(f.db, 'invites', code), { householdId: hid })
+  const user = await currentUser()
+  await setDoc(doc(f.db, 'invites', code), inviteDoc(hid, useStore.getState().sync.householdName ?? 'Foyer', user ?? {}))
   await updateDoc(doc(f.db, 'households', hid), { inviteCode: code })
   useStore.getState().setSync({ inviteCode: code })
   if (old && old !== code) await deleteDoc(doc(f.db, 'invites', old)).catch(() => {})

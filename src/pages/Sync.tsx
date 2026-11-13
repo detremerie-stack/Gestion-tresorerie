@@ -4,7 +4,7 @@ import { QrCode } from '../ui/QrCode'
 import { AlertTriangle, Cloud, CloudOff, Copy, KeyRound, LogOut, RefreshCw, Share2, Users } from 'lucide-react'
 import type { User } from 'firebase/auth'
 import { useStore } from '../data/store'
-import { cancelJoin, changeInviteCode, confirmJoin, findHousehold, householdMembers, isBuiltIn, isConfigured, linkHousehold, onSyncStatus, onUser, signInGoogle, signOut, startJoin, startRealtime, syncNow, type PendingJoin, type SyncStatus } from '../data/sync'
+import { changeInviteCode, confirmJoin, findHousehold, householdMembers, isBuiltIn, isConfigured, linkHousehold, onSyncStatus, onUser, signInGoogle, signOut, startJoin, startRealtime, syncNow, type PendingJoin, type SyncStatus } from '../data/sync'
 import { Dialog } from '../ui/Dialog'
 import { WipeButton } from '../ui/WipeButton'
 import { Page, Section } from '../ui/Page'
@@ -205,11 +205,12 @@ function HouseholdForm({ run, busy, err }: { run: (fn: () => Promise<void>) => P
   }
   const go = () => run(async () => {
     if (mode === 'join') { setPending(await startJoin(value.trim())); return }
-    await linkHousehold(mode, value.trim())
+    await linkHousehold(value.trim())
     finish()
   })
   const accept = () => { const p = pending!; setPending(undefined); void run(async () => { await confirmJoin(p); finish() }) }
-  const refuse = () => { const p = pending; setPending(undefined); if (p) void cancelJoin(p) }
+  // Rien n'a été écrit avant la confirmation : refuser (ou fermer l'appli) ne laisse aucune trace.
+  const refuse = () => setPending(undefined)
   return (
     <Section title="Foyer">
       <div className="card form">
@@ -225,8 +226,11 @@ function HouseholdForm({ run, busy, err }: { run: (fn: () => Promise<void>) => P
         )}
         <button className="btn primary" disabled={busy || !value.trim()} onClick={() => void go()}>{busy ? 'Patientez…' : mode === 'create' ? 'Créer' : 'Rejoindre'}</button>
       </div>
-      <Dialog open={!!pending} onClose={refuse} title={`Rejoindre le foyer « ${pending?.name ?? ''} » ?`}
+      <Dialog open={!!pending} onClose={refuse} title={pending?.name ? `Rejoindre le foyer « ${pending.name} » ?` : 'Rejoindre ce foyer sans nom ?'}
         actions={<><button className="btn primary" onClick={accept}>Rejoindre</button><button className="btn" data-autofocus onClick={refuse}>Annuler</button></>}>
+        <p style={{ margin: 0 }}>
+          {pending?.members.length ? <>Déjà dans ce foyer : <strong>{pending.members.join(', ')}</strong>.</> : 'Ce code a été créé par une ancienne version : on ne sait pas qui est déjà dans ce foyer.'}
+        </p>
         <p style={{ margin: 0 }}>Vos données de cet appareil y seront partagées avec les personnes du foyer. Continuez seulement si ce code vient de Lionel ou de Véra.</p>
       </Dialog>
     </Section>

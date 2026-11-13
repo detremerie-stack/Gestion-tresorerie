@@ -43,7 +43,7 @@
   .page { max-width: var(--form-max); padding: 32px; gap: 32px; }
   .page.wide { max-width: var(--content-max); }
   .page-header h1 { font-size: 28px; }
-  .sticky-actions { bottom: 24px; }
+  .sticky-actions { bottom: 0; padding-bottom: 24px; }
   .toast { bottom: 24px; left: calc(50% + 120px); }
 
   /* ---------- Boîte de dialogue centrée ---------- */
@@ -99,4 +99,29 @@
   .tx-row .col-date { color: var(--text-2); font-size: 14px; }
   .tx-row .col-cat, .tx-row .col-acc { font-size: 14px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tx-table { overflow: clip; }
+}
+
+/* ---------- Corrections phase 3 ---------- */
+/* Historique entre 900 et 1279 px : la description garde au moins 160 px ; le compte passe sous la description. */
+@media (min-width: 900px) and (max-width: 1279.98px) and (min-height: 500px) {
+  .tx-row, .tx-head { grid-template-columns: 40px 64px minmax(160px, 1fr) 140px 120px; }
+  .tx-row .col-acc, .tx-head > span:nth-child(5) { display: none; }
+}
+@media (min-width: 1280px) and (min-height: 500px) {
+  .tx-row .acc-inline { display: none; }
+}
+@media (min-width: 900px) and (min-height: 500px) {
+  /* Saisie rapide : panneau limité à la hauteur de l'écran, contenu qui défile, « Enregistrer » toujours visible. */
+  .page.quick { max-height: calc(100vh - 64px); overflow-y: auto; overscroll-behavior: contain; gap: 8px; }
+  .page.quick > * { flex-shrink: 0; }
+  .page.quick .quick-save { position: sticky; bottom: 0; z-index: 1; flex: none; box-shadow: 0 -12px 16px 4px var(--surface); }
+  .quick .keypad button { min-height: 44px; }
+  /* Verrou : touches sur fond --surface-2, comme le pavé de la saisie rapide. */
+  .lock-gate .keypad button { background: var(--surface-2); box-shadow: none; }
+}
+/* Accueil à 1280 px et plus : la colonne de droite suit son contenu (pas de trou sous « À confirmer »). */
+@media (min-width: 1280px) and (min-height: 500px) {
+  .page.home { grid-template-areas: "hero conf" "hero rec" "mois rec" "lim bref"; grid-template-rows: auto auto 1fr auto; row-gap: 0; }
+  .page.home > * { margin-bottom: 32px; }
+  .home-rec { align-self: start; }
 }

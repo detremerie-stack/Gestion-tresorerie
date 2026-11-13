@@ -371,3 +371,6 @@ kbd { font: 600 12px var(--font); border: 1px solid var(--field-border); border-
 .callout.danger-callout { background: var(--danger-soft); color: var(--danger); }
 .hbar .bar.cat-bar { background: color-mix(in srgb, var(--c, #94A3B8) var(--bar-mix), var(--bar-mix-with)); }
 .btn.danger-fill { padding-block: 10px; line-height: 1.25; text-align: center; }
+/* Bouton collé en bas des formulaires : fond qui masque proprement ce qui passe dessous, et marge en fin de formulaire. */
+.sticky-actions { bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); margin-top: var(--s2); padding-bottom: var(--s3); background: linear-gradient(to bottom, transparent, var(--bg) 14px); z-index: 2; }
+.form:has(> .sticky-actions) { padding-bottom: var(--s4); }

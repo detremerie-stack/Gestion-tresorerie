@@ -144,7 +144,13 @@ export default function Transactions() {
                             <span className="sub phone-only">
                               {[t.type !== 'transfer' && t.payee ? cat?.name ?? 'Sans catégorie' : null, acc?.name, who, ...t.tags.map((x) => '#' + x)].filter(Boolean).join(' · ')}
                             </span>
-                            {(who || t.tags.length > 0) && <span className="sub desk-only">{[who, ...t.tags.map((x) => '#' + x)].filter(Boolean).join(' · ')}</span>}
+                            {/* PC étroit (900–1279 px) : le compte passe sous la description, la colonne Compte est masquée. */}
+                            {(acc || who || t.tags.length > 0) && (
+                              <span className="sub desk-only">
+                                {acc && <span className="acc-inline">{acc.name}{who || t.tags.length ? ' · ' : ''}</span>}
+                                {[who, ...t.tags.map((x) => '#' + x)].filter(Boolean).join(' · ')}
+                              </span>
+                            )}
                           </div>
                           <span className="col-cat desk-only">{t.type === 'transfer' ? 'Entre nos comptes' : cat?.name ?? 'Sans catégorie'}</span>
                           <span className="col-acc desk-only">{acc?.name}</span>
