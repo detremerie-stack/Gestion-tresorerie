@@ -17,7 +17,9 @@ button { cursor: pointer; }
 a { color: var(--primary); text-decoration: none; }
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .num, .money { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+/* Un tableau ne se laisse pas réduire à 1 px : on l'ancre à droite pour qu'il ne puisse déborder que vers la gauche (hors défilement), sans perdre sa structure de tableau pour les lecteurs d'écran. */
+table.sr-only { left: auto; right: 0; top: 0; }
 
 /* ---------- Structure ---------- */
 .app { min-height: 100%; padding-bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom)); }
@@ -231,9 +233,9 @@ table.data .faint { font-size: inherit; }
 .quick-actions a { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text); padding: var(--s2) 0; border-radius: var(--r-card); }
 .quick-actions a span { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 18px; background: var(--surface); color: var(--primary); box-shadow: var(--shadow); }
 .quick-actions a:active span { transform: scale(0.96); }
-.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
 .tile { display: flex; flex-direction: column; gap: 4px; padding: var(--s4); border-radius: var(--r-card); background: var(--surface); box-shadow: var(--card-ring), var(--shadow); color: inherit; min-height: 108px; }
-.tile-label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tile-label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); overflow-wrap: anywhere; }
 .tile-label svg { color: var(--primary); flex: none; }
 .tile-value { font-size: 20px; font-weight: 750; }
 .tile-sub { font-size: 12px; color: var(--text-3); }
