@@ -83,6 +83,17 @@ describe('actions du store', () => {
     expect(useStore.getState().dirty['members:m2']).toBeUndefined()
   })
 
+  it('applyRemote ignore les enregistrements distants mal formés (P10)', () => {
+    useStore.getState().applyRemote([
+      { kind: 'transactions', data: { id: 't-ok', amount: 5 } as never },
+      { kind: 'transactions', data: { id: 't-nan', amount: null } as never },
+      { kind: 'transactions', data: { amount: 5 } as never },
+      { kind: 'hack' as Kind, data: { id: 'x' } as never },
+    ])
+    expect(Object.keys(useStore.getState().data.transactions)).toEqual(['t-ok'])
+    expect((useStore.getState().data as Record<string, unknown>).hack).toBeUndefined()
+  })
+
   it('markSubscriptionPaid : même devise, devise étrangère avec frais, essai → actif', () => {
     const st = useStore.getState()
     st.upsertMany('accounts', [
